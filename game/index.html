@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>THE LONG NIGHT — A Zombie Outbreak Observation Horror</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%2305060a'/%3E%3Crect x='3' y='2' width='10' height='8' fill='%23d0473e'/%3E%3Crect x='5' y='4' width='2' height='2' fill='%23050505'/%3E%3Crect x='9' y='4' width='2' height='2' fill='%23050505'/%3E%3Crect x='5' y='11' width='6' height='4' fill='%237ec36b'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="styles/main.css" />
+</head>
+<body>
+  <div id="game-frame">
+    <!-- The rendered game world -->
+    <canvas id="game-canvas" width="480" height="270"></canvas>
+
+    <!-- ===================== HUD ===================== -->
+    <div id="hud" class="hud hidden">
+      <div class="hud-row">
+        <div id="clock" class="hud-chip">--:--</div>
+        <div id="phase" class="hud-chip">SITUATION: NORMAL</div>
+      </div>
+      <div id="order-banner" class="order-banner hidden"></div>
+      <div class="hud-meters">
+        <div class="meter">
+          <span class="meter-label">STRESS</span>
+          <div class="meter-track"><div id="stress-fill" class="meter-fill stress"></div></div>
+        </div>
+        <div class="meter">
+          <span class="meter-label">FATIGUE</span>
+          <div class="meter-track"><div id="fatigue-fill" class="meter-fill fatigue"></div></div>
+        </div>
+      </div>
+      <div id="barricade-status" class="barricade-status"></div>
+    </div>
+
+    <!-- ===================== Interaction prompt ===================== -->
+    <div id="prompt" class="prompt hidden"></div>
+
+    <!-- ===================== Device: TV ===================== -->
+    <div id="screen-tv" class="device-screen tv hidden">
+      <div class="device-bezel">
+        <div class="tv-inner">
+          <div class="tv-station">
+            <span id="tv-channel">NNC — NATIONAL NEWS CHANNEL</span>
+            <span id="tv-live" class="tv-live">● LIVE</span>
+          </div>
+          <div id="tv-headline" class="tv-headline"></div>
+          <div id="tv-body" class="tv-body"></div>
+          <div class="tv-ticker"><div id="tv-ticker-text" class="tv-ticker-text"></div></div>
+        </div>
+      </div>
+      <div class="device-controls">
+        <button class="btn" data-tv="prev">◀ EARLIER</button>
+        <button class="btn" data-tv="next">LATER ▶</button>
+        <button class="btn close" data-close="screen-tv">TURN OFF (ESC)</button>
+      </div>
+    </div>
+
+    <!-- ===================== Device: Computer ===================== -->
+    <div id="screen-computer" class="device-screen computer hidden">
+      <div class="crt">
+        <div class="crt-head">FEDERAL EMERGENCY MANAGEMENT NETWORK — SECURE TERMINAL</div>
+        <div id="computer-log" class="crt-log"></div>
+        <div class="crt-cursor">&gt; _</div>
+      </div>
+      <div class="device-controls">
+        <button class="btn close" data-close="screen-computer">LOG OFF (ESC)</button>
+      </div>
+    </div>
+
+    <!-- ===================== Device: Phone ===================== -->
+    <div id="screen-phone" class="device-screen phone hidden">
+      <div class="phone-body">
+        <div class="phone-notch"></div>
+        <div class="phone-head">EMERGENCY ALERTS</div>
+        <div id="phone-log" class="phone-log"></div>
+      </div>
+      <div class="device-controls">
+        <button class="btn close" data-close="screen-phone">CLOSE (ESC / P)</button>
+      </div>
+    </div>
+
+    <!-- ===================== Door choice ===================== -->
+    <div id="door-modal" class="door-modal hidden">
+      <div class="door-modal-inner">
+        <div class="peephole">
+          <canvas id="peephole-canvas" width="180" height="180"></canvas>
+        </div>
+        <div class="door-text">
+          <h2 id="door-title">SOMEONE IS AT THE DOOR</h2>
+          <p id="door-desc"></p>
+          <div class="door-buttons">
+            <button id="door-yes" class="btn yes">OPEN THE DOOR</button>
+            <button id="door-no" class="btn no">KEEP IT SHUT</button>
+          </div>
+          <div id="door-timer" class="door-timer"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== Start menu ===================== -->
+    <div id="menu" class="overlay menu">
+      <div class="menu-card">
+        <h1 class="title-glitch" data-text="THE LONG NIGHT">THE LONG NIGHT</h1>
+        <p class="subtitle">a zombie-outbreak observation horror</p>
+        <p class="flavor">
+          It is an ordinary evening. You are home alone. The news is on in the
+          background. Somewhere out there, something has already begun — and it
+          is coming closer, one broadcast at a time.
+        </p>
+        <div class="controls-help">
+          <div><b>MOVE</b> — WASD / Arrow Keys</div>
+          <div><b>INTERACT</b> — E or Space</div>
+          <div><b>PHONE</b> — P &nbsp;·&nbsp; <b>CLOSE</b> — Esc</div>
+          <div><b>GOAL</b> — Survive the night. Watch. Decide. Stay sane.</div>
+        </div>
+        <button id="start-btn" class="btn big">ENTER THE HOUSE</button>
+        <p class="warn">Contains flashing lights, sudden sounds &amp; unsettling themes.</p>
+      </div>
+    </div>
+
+    <!-- ===================== Ending ===================== -->
+    <div id="ending" class="overlay ending hidden">
+      <div class="ending-card">
+        <h1 id="ending-title"></h1>
+        <p id="ending-text"></p>
+        <div id="ending-stats" class="ending-stats"></div>
+        <button id="restart-btn" class="btn big">FACE THE NIGHT AGAIN</button>
+      </div>
+    </div>
+
+    <!-- Sound toggle -->
+    <button id="mute-btn" class="mute-btn" title="Toggle sound">🔊</button>
+  </div>
+
+  <!-- Modular game scripts (classic scripts share the window.ZH namespace so
+       the game runs even when opened directly from the file system). -->
+  <script src="scripts/audio.js"></script>
+  <script src="scripts/player.js"></script>
+  <script src="scripts/renderer.js"></script>
+  <script src="scripts/events.js"></script>
+  <script src="scripts/ui.js"></script>
+  <script src="scripts/engine.js"></script>
+</body>
+</html>
