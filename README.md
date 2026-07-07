@@ -1,10 +1,13 @@
 # Zombie-Phycological-Horror-Game-
 ### THE LONG NIGHT — *the end is here*
 
-A 2D psychological-horror **observation** game. You are a homeowner alone on
-the night a zombie virus tips into a full outbreak. You can't fight — you can
-only watch it unfold through your TV, computer, phone and windows, manage your
-stress, barricade the doors, and decide who you let in when they knock.
+A 2D psychological-horror **observation** game. You are a homeowner surviving
+the three days a zombie virus (the Peclip Virus) tips into a full national
+collapse. Choose your state and neighborhood on the outbreak map — from a
+Green Safe Zone to an Unrecoverable Gray Zone — then watch it all unfold
+through your TV, computer, phone and windows as the world outside slowly
+deteriorates. Manage your stress, barricade the doors, and decide who you let
+in when they knock.
 
 Built with **pure HTML + CSS + vanilla JavaScript** (canvas rendering, Web
 Audio sound). No libraries, no build step.

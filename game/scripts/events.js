@@ -180,6 +180,62 @@
       headline: "⚠ FINAL WARNING ⚠",
       body: "This is an emergency broadcast. Do not attempt to leave your home. Do not approach military borders. Do not attempt to enter Safe-Guarded Zones without authorization. Stay inside. Barricade all entry points. Await further instructions.",
       ticker: "⚠ DO NOT LEAVE HOME ⚠ DO NOT APPROACH BORDERS ⚠ BARRICADE EVERYTHING ⚠" },
+
+    // ---- THE FULL NATIONAL PECLIP VIRUS REPORT ----
+    // (the last complete transmission before the TV dies)
+    { id: "20.0", phase: 4, channel: "NNC · NATIONAL REPORT",
+      headline: "New York City Remains a Green Safe Zone",
+      body: "Despite catastrophic outbreaks across the Eastern Coast, New York City remains a Green Safe Zone. Massive military fortifications, early containment, and strict curfews have kept infection levels extremely low. Border walls ring every borough. Helicopters patrol around the clock. Mandatory screenings. No civilian entry. The last jewel of the East.",
+      ticker: "NYC: GREEN SAFE ZONE · walls around all boroughs · 24/7 helicopter patrols · NO CIVILIAN ENTRY",
+      on(g) { g.flags.helicopter = true; } },
+    { id: "20.1", phase: 4, channel: "NNC · NATIONAL REPORT",
+      headline: "Eastern Coast: Total Collapse Outside New York",
+      body: "The rest of the Eastern Coast has suffered total collapse. All major states except New York have fallen into uncontrolled infection. Maine, New Hampshire, Massachusetts, Rhode Island, Connecticut, New Jersey, Delaware, Maryland, Virginia, the Carolinas, Georgia and Florida are now designated lost territories.",
+      ticker: "LOST TERRITORIES: ME · NH · MA · RI · CT · NJ · DE · MD · VA · NC · SC · GA · FL" },
+    { id: "20.2", phase: 4, channel: "NNC · NATIONAL REPORT",
+      headline: "Gray Zones Declared: 'Unrecoverable Territories'",
+      body: "Military command has designated several regions Unrecoverable: California's Los Angeles mega-outbreak, southern Oregon, western Arizona, coastal Washington, Long Island, and northern New Jersey. These regions are fully isolated by military bases. No evacuation. No rescue. No government control.",
+      ticker: "GRAY ZONES: CALIFORNIA · S. OREGON · W. ARIZONA · COASTAL WA · LONG ISLAND · N. NEW JERSEY — NO RESCUE",
+      on(g) {
+        if (g.zoneId === "gray") {
+          g.toast("They just said it on the air. Your region. Unrecoverable.");
+          g.player.addStress(10);
+        }
+      } },
+    { id: "20.3", phase: 4, channel: "NNC · NATIONAL REPORT",
+      headline: "Fortified Walls Rise Around the Gray Zones",
+      body: "Fortified walls have been erected around the Gray Zones — reinforced concrete, steel plating, watchtowers, and automated floodlights. Their purpose: keep the infected inside, protect the neighboring safe zones, stage helicopter strike waves, and prevent all civilian entry.",
+      ticker: "Walls sealed · Watchtowers manned · Floodlights automated · Nothing gets out" },
+    { id: "20.4", phase: 4, channel: "NNC · NATIONAL REPORT",
+      headline: "Helicopter Strike Waves: 'Cluster Destruction Ops'",
+      body: "Helicopter units have begun targeted destruction raids on massive virus clusters inside the Gray Zones. The pattern: enter the zone, destroy the cluster, burn the infected districts, extract survivors, withdraw before dark — then repeat the next day. These raids do not reclaim territory. They only reduce the viral mass.",
+      ticker: "Strike waves daily · Burn the clusters · Extract survivors · Withdraw · Repeat",
+      on(g) {
+        g.flags.helicopter = true;
+        if (g.zoneId === "gray") {
+          setTimeout(() => { g.audio.explosion(); g.shake(7); g.fx.flash = 0.3; }, 1400);
+          g.toast("Somewhere across the zone, a cluster stops existing. The window hums.");
+          g.player.addStress(6);
+        }
+      } },
+    { id: "20.5", phase: 4, channel: "NNC · NATIONAL REPORT",
+      headline: "Gangs and Militias Now Hold the Districts",
+      body: "With government control gone, local gangs, militias and neighborhood groups have become the primary defense forces inside the Gray Zones — barricading streets, patrolling rooftops, arming civilians, raising makeshift walls. It is… ironic. The groups once considered dangerous are now the only thing preventing total infection spread.",
+      ticker: "Districts held by gangs & militias · Rooftop patrols · Makeshift walls · 'It is… ironic.'" },
+    { id: "20.6", phase: 4, channel: "NNC · NATIONAL REPORT",
+      headline: "Military Bases Become Fortress-Cities",
+      body: "Military bases bordering the Gray Zones now operate as fortress-cities: launching daily raids, destroying virus clusters, passing leftover supplies over the wall to civilians, and retreating behind the wire by nightfall — then repeating operations at first light.",
+      ticker: "Fortress-cities on the border · Daily raids · Supplies over the wall · Behind the wire by dark" },
+    { id: "20.7", phase: 4, channel: "NNC · NATIONAL REPORT",
+      headline: "The Final Safe Zones",
+      body: "These are the last functioning regions of the country: New York City, the Washington interior, the Oregon interior, Idaho, Montana, Wyoming, Colorado, Utah, the Nevada interior, the Arizona interior, New Mexico, Texas, Oklahoma, Kansas, Nebraska and Iowa. Everything else is contested, collapsed, or gray.",
+      ticker: "FINAL SAFE ZONES: NYC · WA/OR/NV/AZ interiors · ID · MT · WY · CO · UT · NM · TX · OK · KS · NE · IA" },
+    { id: "20.8", phase: 4, channel: "NNC · SIGNING OFF",
+      headline: "This Is Our Last Full Broadcast",
+      body: "If you are inside a Gray Zone… you are on your own. If you are inside a Safe Zone… remain indoors. Avoid all contact. This is our last full broadcast. To everyone still out there — [the anchor's voice breaks] — good night, and good luck.",
+      ticker: "· · · this is our last full broadcast · · · good night · · · good luck · · ·",
+      on(g) { g.player.addStress(5); } },
+
     { id: "19.12", phase: 4, channel: "· · · SIGNAL · · ·", special: "static",
       headline: "▓▓ SIGNAL DISTORTION ▓▓",
       body: "Static swallows the screen. Distorted voices bleed through — too slow, too many, overlapping. An emergency tone loops beneath them and will not stop.",
@@ -276,6 +332,10 @@
       mood: "bad", title: "TURNED",
       text: "It only took one bite. The Peclip fever comes fast — first the cold, then the heat, then the decay you can feel spreading while you stay horribly, completely awake. Your last clear thought is of how normal the evening had started. Then the thought, like the rest of you, begins to rot.",
     },
+    compound: {
+      mood: "good", title: "THE COMPOUND",
+      text: "The militia walks you three blocks through the dark, rifles sweeping every doorway, and pulls you inside a wall of welded cars and nailed plywood. It isn't the government. It isn't rescue. But there are lights, and soup, and people on watch — and in a Gray Zone, that is everything.",
+    },
     panic: {
       mood: "grim", title: "THE LONGEST NIGHT",
       text: "Somewhere between the third helicopter and the screaming next door, something in you simply… broke. You are still in your house. The doors are still shut. But you are not really here anymore, and you never fully will be again.",
@@ -297,6 +357,16 @@
     makeVisitor(game) {
       const phase = game.phase;
       const roll = Math.random();
+
+      // Gray zones have no government: militias, gangs and the infected
+      // own the street. Nobody official ever knocks.
+      if (game.zoneId === "gray") {
+        if (phase >= 3 && roll < 0.14) return this._militiaEscort();
+        if (roll < 0.34) return this._militia();
+        if (roll < 0.54) return this._gang();
+        if (roll < 0.8) return this._infected();
+        return this._survivor("desperate");
+      }
 
       if (phase >= 4) {
         if (roll < 0.6) return this._soldier(true);
@@ -410,6 +480,39 @@
       return this._wrap(v, "soldier");
     },
 
+    _militia() {
+      const v = {
+        sprite: "person", color: "#5a5a3a",
+        title: "A MILITIA PATROL",
+        desc: "Three locals in mismatched armor and duct-taped pads stand on your porch. The one in front lowers her bat. 'District watch. We're reinforcing houses on this street tonight. You want boards on that door or not?'",
+        yes: { stress: -6, repair: 1, message: "They nail an extra board across your frame in under a minute, tap the wall twice, and move to the next house. The district holds together — barely — because of people like this." },
+        no: { stress: +4, message: "'Suit yourself.' They mark your fence with chalk and move on. You wonder what the mark means." },
+      };
+      return this._wrap(v, "person");
+    },
+
+    _gang() {
+      const v = {
+        sprite: "person", color: "#333a44",
+        title: "A CREW FROM THE NEXT BLOCK",
+        desc: "Four figures with bandanas and a shopping cart full of scrap. 'Toll time, neighbor. Everybody on this street chips in for the wall — food, tools, batteries. Open up and pay, or we remember your door.'",
+        yes: { stress: +8, risk: 0.12, message: "You crack the door and hand over canned food and your spare batteries. One of them actually writes it in a ledger. 'Wall's getting taller,' he says. Protection has a price now." },
+        no: { stress: +9, damage: 1, message: "You keep it shut. A bat cracks against a barricade plank — once, twice — and then they move on. They'll remember your door." },
+      };
+      return this._wrap(v, "person");
+    },
+
+    _militiaEscort() {
+      const v = {
+        sprite: "person", color: "#4a5a3a",
+        title: "THE DISTRICT MILITIA — EVACUATING THE BLOCK",
+        desc: "The woman with the bat is back, breathing hard. 'Cluster's moving this way. Strike wave hits this grid at first light. We're pulling everyone back to the compound — armed escort, right now. Last call.'",
+        yes: { ending: "compound", message: "You follow their flashlights through the dark, block by block, and the compound gate scrapes shut behind you." },
+        no: { stress: +14, message: "'Your funeral.' The flashlights bob away down the street, and the night closes in around your house.", flags: { marked: true } },
+      };
+      return this._wrap(v, "person");
+    },
+
     _evac() {
       const v = {
         sprite: "soldier", color: "#3a5a6a",
@@ -434,6 +537,7 @@
             res.ending = out.ending;
           }
           if (out.damage) game.damageBarricade("door", out.damage);
+          if (out.repair) game.barricades.door = Math.min(3, game.barricades.door + out.repair);
           return res;
         },
       };
@@ -458,7 +562,19 @@
           game.toast("A scream rises somewhere outside — cut brutally short.");
           game.player.addStress(6);
         } },
-      { id: "patrol", minPhase: 3, weight: 3, run(game) {
+      { id: "strikewave", minPhase: 2, weight: 4, zones: ["gray"], run(game) {
+          game.flags.helicopter = true;
+          game.audio.helicopterPass();
+          setTimeout(() => { game.audio.explosion(); game.shake(8); game.fx.flash = 0.35; }, 1300);
+          game.toast("A strike wave hammers a cluster a few blocks over. The floor jumps. Ash drifts past the window.");
+          game.player.addStress(8);
+        } },
+      { id: "gangdefense", minPhase: 1, weight: 3, zones: ["gray"], run(game) {
+          game.audio.distantGunfire();
+          game.toast("The crew on the corner opens up on something crawling out of the dark. The shooting stops. Then the cheering starts.");
+          game.player.addStress(4);
+        } },
+      { id: "patrol", minPhase: 3, weight: 3, notZones: ["gray"], run(game) {
           game.flags.soldiersOutside = true; game.audio.siren(true);
           game.toast("Soldiers move down the street, sweeping doorways with flashlights.");
           game.player.addStress(4);
@@ -495,7 +611,10 @@
 
     pickHorror(game) {
       const avail = this.horrorEvents.filter((e) =>
-        game.phase >= e.minPhase && !(e.once && game.firedOnce[e.id]));
+        game.phase >= e.minPhase &&
+        !(e.once && game.firedOnce[e.id]) &&
+        (!e.zones || e.zones.includes(game.zoneId)) &&
+        (!e.notZones || !e.notZones.includes(game.zoneId)));
       if (!avail.length) return null;
       let total = 0; for (const e of avail) total += e.weight;
       let r = Math.random() * total;

@@ -1,21 +1,36 @@
 # THE LONG NIGHT
 ### a 2D psychological-horror observation game
 
-You are an ordinary homeowner, alone, on the night a zombie virus quietly
-tips over into a full outbreak. You cannot fight. You cannot run far. You can
-only **watch** — through your TV, your computer, your phone, and your
-windows — as a normal evening curdles into catastrophe, and decide, knock by
+You are an ordinary homeowner, alone, over the **three days** a zombie virus
+quietly tips over into a full outbreak. You cannot fight. You cannot run far.
+You can only **watch** — through your TV, your computer, your phone, and your
+windows — as a normal week curdles into catastrophe, and decide, knock by
 knock, who you let past your door.
+
+Before you start, you **choose where you live**: any of the 50 states (plus
+Washington D.C., the NYC Fortress, and cut-off Long Island), each assigned to
+a zone tier from the national situation map — **Green Safe Zone, Strained,
+Frontline, Overrun, Collapsed East, or Gray Zone (Unrecoverable)** — and an
+area: City Center, Suburbs, or Rural Outskirts. Your choice changes
+everything: how bad things already are, how often the knocks come, how hard
+the finale hits, and *who* is out there. In the Gray Zones there is no
+government left at all — militias reinforce your door, gangs collect tolls
+for the district wall, and helicopter strike waves burn the clusters a few
+blocks away.
 
 The terror is a slow descent:
 
 * The **news** opens on mild weather and cruise tourism, then breaks the story
   of a mystery illness aboard an Atlantic cruise ship — the **Peclip Virus**.
   Broadcast by broadcast the timeline escalates: hospitals overrun, quarantine
-  zones, military relocation posts, cities falling, and finally the **Eastern
-  Coast Containment Wall**, a shoot-on-sight order, and four "Safe-Guarded
-  Zones" — before the signal decays into static and dead air. You can replay
-  every report you missed.
+  zones, military relocation posts, cities falling, the **Eastern Coast
+  Containment Wall**, a shoot-on-sight order, and four "Safe-Guarded Zones."
+  Then comes the **Full National Peclip Report** — the last complete
+  transmission: NYC the fortress city, the collapsed East, the Gray Zones
+  declared unrecoverable, the walls, the helicopter strike waves, the gangs
+  and militias holding the districts, the fortress-bases, and the final safe
+  zones — before the anchor's voice breaks and the signal decays into static
+  and dead air. You can replay every report you missed.
 * **Government orders** escalate step by step: *curfew → shelter-in-place →
   martial law → the containment directive (a sweep at dawn).*
 * **Helicopters** sweep low over the roof. **Soldiers** patrol the street with
@@ -89,18 +104,21 @@ Walk up to a fixture and a prompt tells you what you can do.
 * When someone **knocks**, look through the peephole and choose. Every choice
   has a cost.
 
-If your **stress** meter fills completely, you break. Survive the whole night
-and dawn arrives.
+If your **stress** meter fills completely, you break. Survive all **three
+days** — watching the world outside your windows slowly fill with trash,
+abandoned cars, smoke plumes, fires and shambling silhouettes — and dawn
+arrives.
 
 ---
 
 ## Endings
 
-There are **six** ways the night can end:
+There are **seven** ways it can end:
 
-* **DAWN** — you simply survive until first light.
+* **DAWN** — you simply survive until the dawn of the third day.
 * **EXTRACTED** — you correctly trust a real evacuation team.
-* **PROCESSED** — you open the door to soldiers under the extermination order.
+* **THE COMPOUND** — in a Gray Zone, you go with the district militia.
+* **PROCESSED** — you open the door to soldiers under the containment sweep.
 * **TURNED** — you let something infected inside your walls.
 * **THE LONGEST NIGHT** — your stress meter maxes out and your mind gives way.
 * **BREACHED** — the finale arrives and your barricades weren't enough.
@@ -120,10 +138,11 @@ game/
   styles/
     main.css            all UI styling / CRT + glitch effects
   scripts/
-    engine.js           game state, loop, schedulers, endings, input
-    renderer.js         all <canvas> drawing + animated street/sky/FX
+    engine.js           game state, loop, day cycle, schedulers, endings
+    renderer.js         all <canvas> drawing + deteriorating street/sky/FX
+    world.js            the national zone map: states, tiers, areas, picker
     player.js           the homeowner: movement, stress, fatigue
-    events.js           story content, door visitors, horror events
+    events.js           TV timeline, door visitors, horror events
     ui.js               DOM view layer (HUD, screens, modals, toasts)
     audio.js            Web Audio synthesis + WAV sound effects
   assets/

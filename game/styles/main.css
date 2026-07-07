@@ -413,6 +413,85 @@ html, body {
 .ending-card.bad h1 { color: var(--danger); text-shadow: 0 0 18px rgba(208,71,62,0.5); }
 .ending-card.grim h1 { color: #b7a0d0; text-shadow: 0 0 18px rgba(140,111,192,0.5); }
 
+/* ===================== Spawn picker (menu) ===================== */
+.spawn-picker {
+  margin: 16px auto 2px;
+  max-width: 400px;
+  text-align: left;
+  display: grid;
+  gap: 8px;
+}
+.spawn-picker label {
+  font-size: clamp(8px, 1.3vw, 11px);
+  color: var(--dim);
+  letter-spacing: 2px;
+}
+.spawn-row { display: flex; gap: 8px; }
+.spawn-picker select {
+  flex: 1;
+  min-width: 0;
+  background: #12161e;
+  color: var(--ink);
+  border: 1px solid #3a4454;
+  padding: 7px 8px;
+  font-family: inherit;
+  font-size: clamp(10px, 1.5vw, 13px);
+  border-radius: 3px;
+  cursor: pointer;
+}
+.spawn-picker select:hover { border-color: #55627a; }
+.spawn-picker optgroup { color: var(--dim); font-style: normal; }
+.zone-chip {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 3px;
+  font-size: clamp(8px, 1.3vw, 11px);
+  letter-spacing: 1px;
+  color: #0b0d12;
+  font-weight: bold;
+  background: #e0c23c;
+}
+#zone-desc {
+  color: var(--dim);
+  font-size: clamp(9px, 1.4vw, 12px);
+  line-height: 1.5;
+  margin: 5px 0 0;
+  min-height: 2.8em;
+}
+
+/* ===================== Day transition card ===================== */
+.day-card {
+  position: absolute;
+  inset: 0;
+  z-index: 55;
+  background: rgba(2, 3, 6, 0.93);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  animation: dayfade 0.7s ease;
+}
+@keyframes dayfade { from { opacity: 0; } to { opacity: 1; } }
+.day-card h2 {
+  color: #c9d2dc;
+  letter-spacing: 6px;
+  font-size: clamp(20px, 4.4vw, 38px);
+  margin: 0 0 12px;
+  text-shadow: 0 0 24px rgba(0,0,0,0.9);
+}
+.day-card p {
+  color: var(--dim);
+  max-width: 440px;
+  font-size: clamp(11px, 1.7vw, 15px);
+  line-height: 1.6;
+  padding: 0 22px;
+  margin: 0;
+}
+
+/* HUD location chip */
+.hud-chip.loc { color: var(--dim); border-left-width: 3px; }
+
 /* ===================== Mute button ===================== */
 .mute-btn {
   position: absolute; bottom: 10px; right: 10px; z-index: 65;

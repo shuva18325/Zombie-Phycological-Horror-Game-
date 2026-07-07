@@ -18,7 +18,12 @@
       this.el = {
         hud: $("hud"),
         clock: $("clock"),
+        dayChip: $("day-chip"),
+        locChip: $("loc-chip"),
         phase: $("phase"),
+        dayCard: $("day-card"),
+        dayCardTitle: $("day-card-title"),
+        dayCardText: $("day-card-text"),
         order: $("order-banner"),
         stress: $("stress-fill"),
         fatigue: $("fatigue-fill"),
@@ -67,6 +72,11 @@
     /* ---------------- HUD ---------------- */
     refreshHUD(game) {
       this.el.clock.textContent = game.clockString();
+      this.el.dayChip.textContent = "DAY " + game.day + "/3";
+      if (game.zone) {
+        this.el.locChip.textContent = game.stateName + " · " + game.area.label;
+        this.el.locChip.style.borderLeftColor = game.zone.color;
+      }
       this.el.phase.textContent = "SITUATION: " + ZH.Content.PHASES[game.phase];
       this.el.phase.style.color =
         game.phase >= 3 ? "#d0473e" : game.phase >= 2 ? "#e0a83c" : "#7ec36b";
@@ -88,6 +98,15 @@
     },
 
     showHUD() { this.el.hud.classList.remove("hidden"); },
+    hideHUD() { this.el.hud.classList.add("hidden"); },
+
+    /* ---------------- day transition card ---------------- */
+    showDayCard(title, text) {
+      this.el.dayCardTitle.textContent = title;
+      this.el.dayCardText.textContent = text;
+      this.el.dayCard.classList.remove("hidden");
+    },
+    hideDayCard() { this.el.dayCard.classList.add("hidden"); },
 
     /* ---------------- prompt ---------------- */
     showPrompt(html) {
@@ -227,7 +246,9 @@
       const mm = String(Math.floor(game.timeElapsed / 60)).padStart(2, "0");
       const ss = String(Math.floor(game.timeElapsed % 60)).padStart(2, "0");
       this.el.endingStats.innerHTML =
-        "You held out until <b>" + game.clockString() + "</b><br>" +
+        (game.stateName ? "Location: " + game.stateName + " · " + game.area.label +
+          " · " + game.zone.label + "<br>" : "") +
+        "You held out until <b>DAY " + game.day + " · " + game.clockString() + "</b><br>" +
         "Time survived: " + mm + ":" + ss + "<br>" +
         "Final stress: " + Math.round(game.player.stress) + "%<br>" +
         "Doors answered: " + game.stats.doorsAnswered +

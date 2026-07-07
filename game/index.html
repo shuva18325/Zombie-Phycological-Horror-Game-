@@ -15,8 +15,10 @@
     <!-- ===================== HUD ===================== -->
     <div id="hud" class="hud hidden">
       <div class="hud-row">
+        <div id="day-chip" class="hud-chip">DAY 1</div>
         <div id="clock" class="hud-chip">--:--</div>
         <div id="phase" class="hud-chip">SITUATION: NORMAL</div>
+        <div id="loc-chip" class="hud-chip loc"></div>
       </div>
       <div id="order-banner" class="order-banner hidden"></div>
       <div class="hud-meters">
@@ -97,6 +99,12 @@
       </div>
     </div>
 
+    <!-- ===================== Day transition card ===================== -->
+    <div id="day-card" class="day-card hidden">
+      <h2 id="day-card-title"></h2>
+      <p id="day-card-text"></p>
+    </div>
+
     <!-- ===================== Start menu ===================== -->
     <div id="menu" class="overlay menu">
       <div class="menu-card">
@@ -111,7 +119,22 @@
           <div><b>MOVE</b> — WASD / Arrow Keys</div>
           <div><b>INTERACT</b> — E or Space</div>
           <div><b>PHONE</b> — P &nbsp;·&nbsp; <b>CLOSE</b> — Esc</div>
-          <div><b>GOAL</b> — Survive the night. Watch. Decide. Stay sane.</div>
+          <div><b>GOAL</b> — Survive three days. Watch. Decide. Stay sane.</div>
+        </div>
+        <div class="spawn-picker">
+          <label for="state-select">WHERE ARE YOU WHEN IT BEGINS?</label>
+          <div class="spawn-row">
+            <select id="state-select" aria-label="Choose your state"></select>
+            <select id="area-select" aria-label="Choose your area">
+              <option value="city">City Center</option>
+              <option value="suburb" selected>Suburbs</option>
+              <option value="rural">Rural Outskirts</option>
+            </select>
+          </div>
+          <div id="zone-info">
+            <span id="zone-chip" class="zone-chip"></span>
+            <p id="zone-desc"></p>
+          </div>
         </div>
         <button id="start-btn" class="btn big">ENTER THE HOUSE</button>
         <p class="warn">Contains flashing lights, sudden sounds &amp; unsettling themes.</p>
@@ -135,6 +158,7 @@
   <!-- Modular game scripts (classic scripts share the window.ZH namespace so
        the game runs even when opened directly from the file system). -->
   <script src="scripts/audio.js"></script>
+  <script src="scripts/world.js"></script>
   <script src="scripts/player.js"></script>
   <script src="scripts/renderer.js"></script>
   <script src="scripts/events.js"></script>

@@ -190,6 +190,30 @@
       }
     },
 
+    explosion() {
+      // a strike-wave detonation: deep boom + falling rumble
+      if (!this.ctx || this.muted) return;
+      const t = this.ctx.currentTime;
+      const src = this.ctx.createBufferSource();
+      src.buffer = this._noiseBuffer(1.4);
+      const lp = this.ctx.createBiquadFilter();
+      lp.type = "lowpass";
+      lp.frequency.setValueAtTime(420, t);
+      lp.frequency.exponentialRampToValueAtTime(60, t + 1.2);
+      const g = this.ctx.createGain();
+      src.connect(lp); lp.connect(g); g.connect(this.master);
+      this._env(g, 0.85, 1.3, 0.005);
+      const o = this.ctx.createOscillator();
+      o.type = "sine";
+      o.frequency.setValueAtTime(70, t);
+      o.frequency.exponentialRampToValueAtTime(28, t + 1.0);
+      const g2 = this.ctx.createGain();
+      o.connect(g2); g2.connect(this.master);
+      this._env(g2, 0.5, 1.1, 0.01);
+      src.start(); src.stop(t + 1.4);
+      o.start(); o.stop(t + 1.2);
+    },
+
     scream() {
       if (!this.ctx || this.muted) return;
       const o = this.ctx.createOscillator();

@@ -1,22 +1,32 @@
 /* ============================================================
    engine.js — game controller
-   Owns the game state, input, all schedulers (phase escalation,
-   door knocks, random horror, finale breach checks), the ending
-   logic and the main animation loop. Wires the DOM and boots the
-   whole thing once the sprites have loaded.
+   Owns the game state, input, all schedulers (TV timeline, phase
+   escalation, day cycle, door knocks, random horror, finale breach
+   checks), the ending logic and the main animation loop.
+
+   TIME MODEL: the run spans THREE DAYS. Each in-game day lasts
+   DAY_LENGTH real seconds and maps to a 24-hour clock starting at
+   08:00. The TV broadcast timeline advances underneath it all and
+   sets the NATIONAL phase; your chosen zone's offset turns that
+   into the LOCAL severity that actually knocks on your door.
    Exposes: window.ZH.Engine
    ============================================================ */
 (function (ZH) {
   "use strict";
 
-  const DURATION = 300;               // seconds of story (dusk -> dawn)
-  const DOOR_TIME = 9;                // seconds to answer a knock
-  const TV_HOLDS = [12, 9, 8, 7, 6];  // seconds a broadcast holds, by phase
+  const DAY_LENGTH = 140;                    // real seconds per in-game day
+  const DAYS = 3;
+  const DURATION = DAY_LENGTH * DAYS;        // survive this long -> dawn
+  const DOOR_TIME = 9;                       // seconds to answer a knock
+  const TV_HOLDS = [16, 12, 10, 9, 8];       // broadcast hold secs by national phase
+
+  const DAY_TEXTS = {
+    2: "You dozed in snatches with your back against the wall. The street outside looks worse than yesterday — and yesterday was already wrong.",
+    3: "The last day. The broadcasts are almost gone, and whatever is left out there has stopped pretending. Hold on until dawn.",
+  };
 
   // Interaction / draw layout. Single source of truth for object placement.
   function buildObjects() {
-    // Six fixtures across the back wall. fx/fy/fw/fh = draw rect,
-    // ix/iy/iw/ih = floor interaction zone in front of the fixture.
     const defs = [
       { id: "window-l", kind: "window", cx: 57 },
       { id: "tv",       kind: "tv",     cx: 130 },
@@ -27,21 +37,21 @@
     ];
     return defs.map((d) => {
       const fw = 52, fh = 50;
-      const fx = d.cx - fw / 2, fy = 18;
       return {
         id: d.id, kind: d.kind,
-        fx, fy, fw, fh,
+        fx: d.cx - fw / 2, fy: 18, fw, fh,
         ix: d.cx - 34, iy: 74, iw: 68, ih: 44,
       };
     });
   }
+
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
   const Engine = {
     game: null,
     input: { left: false, right: false, up: false, down: false },
     raf: 0,
     last: 0,
-    running: false,
 
     /* ------------------------------------------------------------ */
     init() {
@@ -49,30 +59,60 @@
       ZH.Renderer.init(canvas);
       ZH.UI.init();
       ZH.Audio.preload();
+      ZH.World.initPicker(
+        document.getElementById("state-select"),
+        document.getElementById("area-select"),
+        document.getElementById("zone-chip"),
+        document.getElementById("zone-desc"));
 
       this.wireDom();
-      // draw the (dark) room behind the menu for atmosphere
       ZH.Renderer.load(() => {
-        this.newGame();
+        this.newGame(this.readLocation());
         this.loop(performance.now());
       });
     },
 
-    newGame() {
+    readLocation() {
+      const ss = document.getElementById("state-select");
+      const as_ = document.getElementById("area-select");
+      const st = ZH.World.byId(ss && ss.value) || ZH.World.byId("KS");
+      const areaId = (as_ && ZH.World.AREAS[as_.value]) ? as_.value : "suburb";
+      return { state: st, areaId };
+    },
+
+    newGame(loc) {
       const player = new ZH.Player();
+      const state = loc.state;
+      const zone = ZH.World.ZONES[state.zone];
+      const area = ZH.World.AREAS[loc.areaId];
+
       this.game = {
         player,
         objects: buildObjects(),
-        phase: 0,
-        orderIndex: 0,
+        // location
+        stateId: state.id,
+        stateName: state.name,
+        zoneId: state.zone,
+        zone,
+        areaId: loc.areaId,
+        area,
+        // time
+        day: 1,
+        dayShown: 1,
+        hour: 8,
         timeElapsed: 0,
         duration: DURATION,
+        // severity
+        nationalPhase: 0,
+        phase: 0,            // LOCAL severity (national + zone offset)
+        orderIndex: 0,
+        det: 0,              // window deterioration 0..4
         running: false,
-        modal: "none",           // none | tv | computer | phone | door
-        active: null,            // object currently in reach
+        modal: "none",       // none | tv | computer | phone | door | day
+        active: null,
         tvOn: true,
-        tvStage: 0,           // latest broadcast segment aired
-        tvView: 0,            // segment currently on screen (history nav)
+        tvStage: 0,
+        tvView: 0,
         nextTvAt: TV_HOLDS[0],
         computerAlerts: [],
         phoneMsgs: [],
@@ -85,9 +125,8 @@
         fx: { shake: 0, flash: 0, redFlash: 0 },
         firedOnce: {},
         stats: { doorsAnswered: 0, doorsOpened: 0, barricadesBuilt: 0, coffee: 0 },
-        // schedulers
         nextHorrorAt: 14,
-        nextKnockAt: 20,
+        nextKnockAt: 22,
         nextBreachCheck: 6,
         knockPending: null,
         knockDelay: 0,
@@ -96,13 +135,12 @@
         doorTimer: 0,
         gameOver: false,
         audio: ZH.Audio,
-        // ---- helper methods bound to the state object ----
+        // ---- helpers bound to the state object ----
         byId(id) { return this.objects.find((o) => o.id === id); },
         anyScreenOpen() { return this.modal !== "none"; },
         clockString() {
-          const prog = Math.min(1, this.timeElapsed / this.duration);
-          let total = Math.floor(20 * 60 + prog * 10 * 60) % (24 * 60);
-          const h = Math.floor(total / 60), m = total % 60;
+          const h = Math.floor(this.hour);
+          const m = Math.floor((this.hour % 1) * 60);
           return String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0");
         },
         toast(msg) { ZH.UI.toast(msg); },
@@ -111,11 +149,15 @@
           this.barricades[which] = Math.max(0, this.barricades[which] - n);
         },
       };
+
+      ZH.Renderer.resetWorld();
       ZH.UI.setMuteIcon(ZH.Audio.muted);
-      this.unlockPhase(0, true);
+      // Seed national phase 0 content, then apply the zone offset silently.
+      this.setNationalPhase(0, true);
     },
 
     startGame() {
+      this.newGame(this.readLocation());
       ZH.Audio.init();
       ZH.Audio.resume();
       ZH.Audio.startAmbience();
@@ -123,35 +165,48 @@
       ZH.UI.hideMenu();
       ZH.UI.hideEnding();
       ZH.UI.showHUD();
-      this.game.running = true;
+      const g = this.game;
+      g.running = true;
+      this.showDayCard(1,
+        g.stateName + " · " + g.area.label + " — " + g.zone.label + ". " +
+        (g.zoneId === "gray"
+          ? "The government is already gone here. The districts defend themselves."
+          : "The news says it's nothing. The news is wrong."));
     },
 
     /* ------------------------------------------------------------
-       Phase escalation
+       Phase escalation: national (TV-driven) -> local (zone offset)
        ------------------------------------------------------------ */
-    unlockPhase(n, silent) {
+    setNationalPhase(n, silent) {
       const g = this.game;
-      g.phase = n;
-      g.orderIndex = n;
-      g.flags.night = n >= 1;
+      while (g.nationalPhase < n || (silent && g.nationalPhase === 0 && n === 0)) {
+        const step = silent && n === 0 ? 0 : g.nationalPhase + 1;
+        (ZH.Content.GOV_ALERTS[step] || []).forEach((a) => g.computerAlerts.push(a));
+        (ZH.Content.PHONE_MSGS[step] || []).forEach((m) => g.phoneMsgs.push(m));
+        if (step === 0) break;
+        g.nationalPhase = step;
+      }
+      this.recomputeLocalPhase(silent);
+    },
 
-      // append this phase's government alerts
-      (ZH.Content.GOV_ALERTS[n] || []).forEach((a) => g.computerAlerts.push(a));
-      // append this phase's phone messages
-      (ZH.Content.PHONE_MSGS[n] || []).forEach((m) => g.phoneMsgs.push(m));
-
-      if (!silent) {
-        ZH.Audio.alert();
-        const banners = [
-          "",
-          "The news has changed its tone. A curfew is announced.",
-          "SHELTER-IN-PLACE. Barricade everything. Stay away from the windows.",
-          "MARTIAL LAW. The soldiers own the street now.",
-          "CONTAINMENT DIRECTIVE. Your grid is outside the wall — the sweep comes at dawn.",
-        ];
-        if (banners[n]) g.toast("⚠ " + banners[n]);
-        g.player.addStress(n * 3);
-        ZH.Renderer.world.dark = Math.max(ZH.Renderer.world.dark, n >= 1 ? 0.4 : 0);
+    recomputeLocalPhase(silent) {
+      const g = this.game;
+      const lp = clamp(g.nationalPhase + g.zone.offset, 0, 4);
+      if (lp > g.phase || (silent && lp !== g.phase)) {
+        g.phase = lp;
+        g.orderIndex = lp;
+        if (!silent) {
+          ZH.Audio.alert();
+          const banners = [
+            "",
+            "The news has changed its tone. A curfew is announced.",
+            "SHELTER-IN-PLACE. Barricade everything. Stay away from the windows.",
+            "MARTIAL LAW. The soldiers own the street now.",
+            "CONTAINMENT DIRECTIVE. Your grid is outside the wall — the sweep comes at dawn.",
+          ];
+          if (banners[lp]) g.toast("⚠ " + banners[lp]);
+          g.player.addStress(lp * 3);
+        }
       }
     },
 
@@ -184,10 +239,10 @@
 
     closeScreen() {
       const g = this.game;
+      if (g.modal === "door" || g.modal === "day") return; // these resolve themselves
       if (g.modal === "tv") { ZH.UI.closeTV(); ZH.Audio.stopTvStatic(); }
       if (g.modal === "computer") ZH.UI.closeComputer();
       if (g.modal === "phone") ZH.UI.closePhone();
-      if (g.modal === "door") return; // door demands a choice
       g.modal = "none";
     },
 
@@ -197,8 +252,8 @@
         { t: "The street is quiet. A neighbor's porch light hums. Everything looks perfectly normal.", s: -2 },
         { t: "A police cruiser idles at the corner with its lights off. Someone hurries past, glancing back over their shoulder.", s: +3 },
         { t: "Two houses down, a window is shattered. A dark shape drags itself across the lawn and goes still. You step back from the glass.", s: +7 },
-        { t: "Fires smear the skyline orange. Soldiers move door to door in the street below. You should not be standing at this window.", s: +8 },
-        { t: "You lift the very edge of the curtain. What is out there, under the helicopter light, you will not describe — not even to yourself.", s: +10 },
+        { t: "Fires smear the skyline orange. Figures move door to door in the street below. You should not be standing at this window.", s: +8 },
+        { t: "You lift the very edge of the curtain. What is out there, under the searchlights, you will not describe — not even to yourself.", s: +10 },
       ];
       const l = lines[g.phase];
       g.toast(l.t);
@@ -216,7 +271,6 @@
       p.coffeeCooldown = 8;
       g.stats.coffee++;
       if (p.fatigue < 20) {
-        // over-caffeinated — jittery, wired
         p.addStress(7);
         p.addFatigue(-10);
         g.toast("You really didn't need this one. Your hands won't stop shaking.");
@@ -229,11 +283,7 @@
 
     checkDoor() {
       const g = this.game;
-      if (g.doorKnocking && g.knockPending) {
-        // open the decision now
-        this.openDoorModal();
-        return;
-      }
+      if (g.doorKnocking && g.knockPending) { this.openDoorModal(); return; }
       g.toast("The door is locked, bolted, and chained. For now, it holds.");
     },
 
@@ -304,16 +354,15 @@
       }
     },
 
-    // Freeze gameplay for a dramatic beat, then show the ending.
+    /* ------------------------------------------------------------
+       Endings
+       ------------------------------------------------------------ */
     queueEnding(id, delay) {
       const g = this.game;
       g.running = false; // stop schedulers so nothing stacks over the finale
       setTimeout(() => this.triggerEnding(id), delay);
     },
 
-    /* ------------------------------------------------------------
-       Endings
-       ------------------------------------------------------------ */
     triggerEnding(id) {
       const g = this.game;
       if (g.gameOver) return;
@@ -330,6 +379,27 @@
     },
 
     /* ------------------------------------------------------------
+       Day cycle
+       ------------------------------------------------------------ */
+    showDayCard(day, text) {
+      const g = this.game;
+      g.modal = "day";
+      ZH.UI.showDayCard("DAY " + day + " OF " + DAYS, text);
+      setTimeout(() => {
+        ZH.UI.hideDayCard();
+        if (g === this.game && g.modal === "day") g.modal = "none";
+      }, 4200);
+    },
+
+    dayTransition() {
+      const g = this.game;
+      g.dayShown = g.day;
+      g.player.addFatigue(-45);   // you slept, badly, in shifts
+      g.player.addStress(-6);
+      this.showDayCard(g.day, DAY_TEXTS[g.day] || "");
+    },
+
+    /* ------------------------------------------------------------
        Main loop
        ------------------------------------------------------------ */
     loop(now) {
@@ -337,17 +407,15 @@
       let dt = (now - this.last) / 1000;
       this.last = now;
       if (!isFinite(dt) || dt < 0) dt = 0;
-      dt = Math.min(dt, 0.05); // clamp to avoid huge steps after tab-away
+      dt = Math.min(dt, 0.05);
 
       const g = this.game;
       if (!g) return;
 
-      // fx decay (always)
       g.fx.shake *= Math.pow(0.001, dt);
       g.fx.flash = Math.max(0, g.fx.flash - dt * 2);
       g.fx.redFlash = Math.max(0, g.fx.redFlash - dt * 1.2);
 
-      // cosmetics always animate
       ZH.Renderer.update(dt, g);
 
       if (g.running && !g.gameOver) {
@@ -356,9 +424,9 @@
           ZH.UI.updateDoorTimer(g.doorTimer / DOOR_TIME);
           ZH.UI.updateDoorPeephole(g, g.currentVisitor);
           if (g.doorTimer <= 0) this.resolveDoor("no");
+        } else if (g.modal === "day") {
+          // cinematic pause — the card dismisses itself
         } else if (g.modal !== "none") {
-          // reading a device: the world holds its breath, but the
-          // horror on the screens still gnaws at you.
           if (g.modal === "tv" && g.phase >= 2) g.player.addStress(dt * 1.4);
           if (g.modal === "computer" && g.phase >= 3) g.player.addStress(dt * 0.8);
         } else {
@@ -373,32 +441,37 @@
 
     updateActive(dt) {
       const g = this.game, p = g.player;
-      // movement
       const bounds = { minX: 30, maxX: 450, minY: 96, maxY: 248 };
       p.update(dt, this.input, bounds);
 
-      // story time
+      // story time, clock & day cycle
       g.timeElapsed += dt;
+      const tInDay = g.timeElapsed % DAY_LENGTH;
+      g.hour = (8 + (tInDay / DAY_LENGTH) * 24) % 24;
+      g.day = Math.min(DAYS, Math.floor(g.timeElapsed / DAY_LENGTH) + 1);
+      g.flags.night = g.hour >= 20 || g.hour < 6;
 
-      // the TV broadcast timeline drives phase escalation
+      // the world outside decays: local severity + slow creep
+      g.det = Math.min(4, g.phase + (g.timeElapsed / DURATION) * 1.2);
+
+      if (g.day > g.dayShown) { this.dayTransition(); return; }
+
+      // the TV broadcast timeline drives national escalation
       this.updateTV(dt);
 
-      // survive to dawn
+      // survive all three days -> dawn
       if (g.timeElapsed >= g.duration) { this.triggerEnding("survive"); return; }
 
       // panic break
       if (p.stress >= 100) { this.triggerEnding("panic"); return; }
 
-      // proximity / prompt
       this.updateProximity();
-
-      // schedulers
       this.updateHorror(dt);
       this.updateKnocks(dt);
       this.updateBreach(dt);
 
-      // ambient stress relief when calm & safe & idle near coffee off
-      if (p.stress > 0 && g.phase === 0) p.addStress(-dt * 0.4);
+      // calm daylight in still-quiet zones lets your shoulders drop a little
+      if (p.stress > 0 && g.phase <= 1 && !g.flags.night) p.addStress(-dt * 0.35);
     },
 
     updateProximity() {
@@ -428,7 +501,7 @@
       ZH.UI.showPrompt(txt);
     },
 
-    // Advance the Peclip broadcast timeline; it drives phase escalation.
+    // Advance the Peclip broadcast timeline; it drives national phase.
     updateTV(dt) {
       const g = this.game;
       const TL = ZH.Content.TV_TIMELINE;
@@ -438,9 +511,9 @@
       g.tvStage++;
       const st = TL[g.tvStage];
       g.nextTvAt = g.timeElapsed + TV_HOLDS[st.phase] + (Math.random() * 2 - 1);
-      if (st.phase > g.phase) { while (g.phase < st.phase) this.unlockPhase(g.phase + 1); }
+      if (st.phase > g.nationalPhase) this.setNationalPhase(st.phase);
       if (typeof st.on === "function") { try { st.on(g); } catch (e) {} }
-      if (wasLive) g.tvView = g.tvStage;          // auto-follow the live feed
+      if (wasLive) g.tvView = g.tvStage;
       if (g.modal === "tv") ZH.UI.renderTV(g);
     },
 
@@ -454,24 +527,27 @@
       }
       const ranges = [[16, 24], [12, 18], [9, 14], [6, 11], [5, 9]];
       const r = ranges[g.phase];
-      g.nextHorrorAt = g.timeElapsed + r[0] + Math.random() * (r[1] - r[0]);
+      const mul = g.zone.horrorMul * g.area.horrorMul;
+      g.nextHorrorAt = g.timeElapsed +
+        Math.max(6, (r[0] + Math.random() * (r[1] - r[0])) * mul);
     },
 
     updateKnocks(dt) {
       const g = this.game;
-      // resolve a pending knock's short delay before the modal opens
       if (g.knockPending && g.modal === "none") {
         g.knockDelay -= dt;
         if (g.knockDelay <= 0) { this.openDoorModal(); return; }
-        return; // wait for the modal
+        return;
       }
       if (g.knockPending) return;
       if (g.timeElapsed < g.nextKnockAt) return;
-      if (g.modal !== "none") return; // don't stack over a screen
+      if (g.modal !== "none") return;
       this.triggerKnock();
       const ranges = [[30, 46], [24, 38], [18, 30], [14, 24], [10, 18]];
       const r = ranges[g.phase];
-      g.nextKnockAt = g.timeElapsed + r[0] + Math.random() * (r[1] - r[0]);
+      const mul = g.zone.knockMul * g.area.knockMul;
+      g.nextKnockAt = g.timeElapsed +
+        Math.max(14, (r[0] + Math.random() * (r[1] - r[0])) * mul);
     },
 
     updateBreach(dt) {
@@ -485,9 +561,11 @@
       let chance = 0;
       if (g.phase === 3) chance = total < 2 ? weakness * 0.12 : 0;
       else if (g.phase === 4) chance = weakness * 0.45;
+      chance *= g.zone.breachMul;
+      // breaches come with the dark
+      if (!g.flags.night) chance *= 0.35;
       if (Math.random() < chance) {
         ZH.Audio.thud(); g.shake(6); g.fx.redFlash = 0.6;
-        // a barricade absorbs the first hits before a true breach
         if (total > 0 && Math.random() < 0.6) {
           const which = g.barricades.window >= g.barricades.door ? "window" : "door";
           g.damageBarricade(which, 1);
@@ -508,12 +586,14 @@
       const g = () => this.game;
 
       document.getElementById("start-btn").addEventListener("click", () => this.startGame());
+      // Back to the menu so a new state/area can be chosen for the next run.
       document.getElementById("restart-btn").addEventListener("click", () => {
-        this.newGame();
-        this.startGame();
+        ZH.UI.hideEnding();
+        ZH.UI.hideHUD();
+        ZH.UI.clearToasts();
+        ZH.UI.showMenu();
       });
 
-      // close buttons on device screens
       document.querySelectorAll("[data-close]").forEach((b) => {
         b.addEventListener("click", () => this.closeScreen());
       });
@@ -529,17 +609,14 @@
         });
       });
 
-      // door buttons
       document.getElementById("door-yes").addEventListener("click", () => this.resolveDoor("yes"));
       document.getElementById("door-no").addEventListener("click", () => this.resolveDoor("no"));
 
-      // mute
       document.getElementById("mute-btn").addEventListener("click", () => {
         const m = ZH.Audio.toggleMute();
         ZH.UI.setMuteIcon(m);
       });
 
-      // keyboard
       window.addEventListener("keydown", (e) => this.onKey(e, true));
       window.addEventListener("keyup", (e) => this.onKey(e, false));
     },
@@ -558,16 +635,15 @@
 
       if (!g || !g.running) return;
 
-      // door decision hotkeys
       if (g.modal === "door") {
         if (k === "y") this.resolveDoor("yes");
         else if (k === "n") this.resolveDoor("no");
         return;
       }
+      if (g.modal === "day") return;
 
       if (k === "escape") { this.closeScreen(); return; }
 
-      // phone is available anywhere (except mid-decision)
       if (k === "p") {
         if (g.modal === "phone") this.closeScreen();
         else if (g.modal === "none") this.openScreen("phone");

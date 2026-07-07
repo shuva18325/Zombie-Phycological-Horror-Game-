@@ -34,10 +34,18 @@
       redSky: 0,        // catastrophe glow
       targetRed: 0,
       soldiers: [],
+      shamblers: [],    // infected wandering the street at high deterioration
       heli: { active: false, x: -60, y: 26 },
       flame: 0,
       stars: [],
       flickerOn: true,
+    },
+
+    resetWorld() {
+      this.world.soldiers = [];
+      this.world.shamblers = [];
+      this.world.heli.active = false;
+      this.world.redSky = 0;
     },
 
     init(canvas) {
@@ -80,8 +88,15 @@
       const w = this.world;
       const f = game.flags;
 
-      w.targetDark = f.night ? (f.powerOut ? 0.96 : 0.62) : (game.phase >= 2 ? 0.35 : 0.12);
-      if (f.powerOut) w.targetDark = 0.9;
+      // day/night from the in-game clock (each day starts at 08:00)
+      const h = (typeof game.hour === "number") ? game.hour : 21;
+      let daylight;
+      if (h >= 7 && h < 17) daylight = 1;
+      else if (h >= 17 && h < 21) daylight = 1 - (h - 17) / 4;
+      else if (h >= 5 && h < 7) daylight = (h - 5) / 2;
+      else daylight = 0;
+      w.targetDark = 0.1 + (1 - daylight) * 0.57 + (game.phase >= 2 ? 0.04 : 0);
+      if (f.powerOut) w.targetDark = Math.max(w.targetDark, 0.9);
       w.dark += (w.targetDark - w.dark) * Math.min(1, dt * 1.5);
 
       w.targetRed = game.phase >= 3 ? 0.5 : (game.phase >= 2 ? 0.18 : 0);
@@ -101,6 +116,18 @@
       }
       for (const s of w.soldiers) { s.x += s.dir * s.speed * dt; s.t += dt; }
       w.soldiers = w.soldiers.filter((s) => s.x > -40 && s.x < this.W + 40);
+
+      // Infected shamblers wander the street once the outside decays enough
+      const det = game.det || 0;
+      if (det >= 3 && w.shamblers.length < 3 && Math.random() < dt * 0.15) {
+        const dir = Math.random() < 0.5 ? 1 : -1;
+        w.shamblers.push({
+          x: dir === 1 ? -15 : this.W + 15,
+          dir, speed: 3.5 + Math.random() * 4, t: Math.random() * 10,
+        });
+      }
+      for (const z of w.shamblers) { z.x += z.dir * z.speed * dt; z.t += dt; }
+      w.shamblers = w.shamblers.filter((z) => z.x > -30 && z.x < this.W + 30);
 
       // Helicopter fly-through
       if (f.helicopter && !w.heli.active) {
@@ -300,6 +327,81 @@
       ctx.fillRect(gx, base, gw, gy + gh - base);
       ctx.strokeStyle = "rgba(200,200,120,0.15)";
       ctx.beginPath(); ctx.moveTo(gx, base + (gy + gh - base) / 2); ctx.lineTo(gx + gw, base + (gy + gh - base) / 2); ctx.stroke();
+
+      /* ---- the outside world slowly deteriorating ---- */
+      const det = game.det || 0;
+      const streetH = gy + gh - base;
+
+      if (det >= 1) {
+        // scattered trash creeping across the street
+        ctx.fillStyle = "rgba(140,130,110,0.5)";
+        const bits = Math.min(9, Math.floor(det * 3));
+        for (let i = 0; i < bits; i++) {
+          const tx = gx + ((i * 53 + seed * 3) % gw);
+          const ty = base + 2 + ((i * 29 + seed) % Math.max(2, streetH - 3));
+          ctx.fillRect(tx, ty, 2, 1);
+        }
+        // one piece of paper drifting in the wind
+        const px2 = gx + ((this.t * 5 + seed) % gw);
+        ctx.fillStyle = "rgba(200,200,190,0.5)";
+        ctx.fillRect(px2, base + 3 + Math.sin(this.t * 3 + seed) * 1.5, 2, 2);
+      }
+
+      if (det >= 2) {
+        // an abandoned car, doors dark, going nowhere
+        const cxx = gx + ((seed * 7) % Math.max(8, gw - 26)) + 4;
+        ctx.fillStyle = "#3a3f47";
+        ctx.fillRect(cxx, base + 1, 22, 5);
+        ctx.fillStyle = "#262a30";
+        ctx.fillRect(cxx + 3, base - 2, 13, 4);
+        ctx.fillStyle = det >= 3 ? "#14161a" : "#59728a"; // windows go dark once looted
+        ctx.fillRect(cxx + 5, base - 1, 4, 2);
+        ctx.fillRect(cxx + 11, base - 1, 3, 2);
+        ctx.fillStyle = "#101114";
+        ctx.fillRect(cxx + 2, base + 5, 3, 2);
+        ctx.fillRect(cxx + 16, base + 5, 3, 2);
+
+        // smoke plumes and, later, fires in the building shells
+        for (let i = 0; i < 5; i++) {
+          const bx = gx + ((i * 37 + seed) % (gw + 20)) - 10;
+          const bw2 = 10 + ((i * 13 + seed) % 12);
+          const bh2 = 14 + ((i * 17 + seed) % 20);
+          if ((i + seed) % 3 === 0) {
+            for (let s = 0; s < 6; s++) {
+              const rise = (this.t * 8 + s * 5 + i * 7) % 30;
+              const sx = bx + bw2 / 2 + Math.sin((this.t + s) * 1.3 + i) * (2 + rise * 0.15);
+              const sy = base - bh2 - rise;
+              if (sy < gy) continue;
+              ctx.fillStyle = "rgba(90,90,95," + (0.35 * (1 - rise / 30)) + ")";
+              ctx.fillRect(sx, sy, 2, 2);
+            }
+          }
+          if (det >= 3 && (i + seed) % 4 === 1) {
+            ctx.fillStyle = "rgba(255," + Math.floor(120 + 80 * w.flame) + ",40," + (0.5 + 0.4 * w.flame) + ")";
+            ctx.fillRect(bx + 3, base - bh2 + 4, 3, 3);
+          }
+        }
+      }
+
+      if (det >= 4) {
+        // rubble heaps where the street used to be a street
+        ctx.fillStyle = "#1c1a18";
+        const rx = gx + ((seed * 11) % Math.max(6, gw - 14));
+        ctx.fillRect(rx, base - 2, 10, 3);
+        ctx.fillRect(rx + 2, base - 4, 6, 2);
+        ctx.fillRect(rx + 4, base - 5, 2, 1);
+      }
+
+      // infected shamblers drifting through the wreckage
+      for (const z of w.shamblers) {
+        if (z.x < o.fx - 20 || z.x > o.fx + o.fw + 20) continue;
+        const zx = z.x, zy = base + 2;
+        const tw = Math.sin(z.t * 7) * 0.8;
+        ctx.fillStyle = "#4e5c46";
+        ctx.fillRect(zx - 2 + tw, zy - 10, 5, 10);
+        ctx.fillStyle = "#6a785c";
+        ctx.fillRect(zx - 1 + tw, zy - 13, 3, 3);
+      }
 
       // soldiers on the street
       const sspr = this._spr("soldier");
