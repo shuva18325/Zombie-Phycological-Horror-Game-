@@ -45,8 +45,16 @@
             <span id="tv-channel">NNC — NATIONAL NEWS CHANNEL</span>
             <span id="tv-live" class="tv-live">● LIVE</span>
           </div>
-          <div id="tv-headline" class="tv-headline"></div>
-          <div id="tv-body" class="tv-body"></div>
+          <div class="tv-content">
+            <div class="tv-visual">
+              <canvas id="tv-face" width="120" height="120"></canvas>
+              <canvas id="tv-minimap" width="120" height="86" class="hidden"></canvas>
+            </div>
+            <div class="tv-textcol">
+              <div id="tv-headline" class="tv-headline"></div>
+              <div id="tv-body" class="tv-body"></div>
+            </div>
+          </div>
           <div class="tv-ticker"><div id="tv-ticker-text" class="tv-ticker-text"></div></div>
         </div>
       </div>
@@ -57,27 +65,55 @@
       </div>
     </div>
 
-    <!-- ===================== Device: Computer ===================== -->
+    <!-- ===================== Device: Computer (the main hub) ===================== -->
     <div id="screen-computer" class="device-screen computer hidden">
-      <div class="crt">
-        <div class="crt-head">FEDERAL EMERGENCY MANAGEMENT NETWORK — SECURE TERMINAL</div>
-        <div id="computer-log" class="crt-log"></div>
-        <div class="crt-cursor">&gt; _</div>
+      <div class="pc">
+        <div class="pc-top">
+          <span class="pc-user">◉ home-desktop</span>
+          <span id="pc-clock" class="pc-clock">--:--</span>
+          <span id="pc-net" class="pc-net">● ONLINE</span>
+        </div>
+        <!-- Tile home screen -->
+        <div id="pc-home" class="pc-home">
+          <div class="pc-home-label">START</div>
+          <div class="pc-tiles">
+            <button class="tile t-blue" data-app="messages">
+              <span class="tile-ico">💬</span><span class="tile-name">Messages</span>
+              <span id="badge-messages" class="tile-badge hidden"></span>
+            </button>
+            <button class="tile t-red" data-app="news">
+              <span class="tile-ico">📰</span><span class="tile-name">Newspaper</span>
+              <span id="badge-news" class="tile-badge hidden"></span>
+            </button>
+            <button class="tile t-green" data-app="map">
+              <span class="tile-ico">🗺️</span><span class="tile-name">National Map</span>
+              <span id="badge-map" class="tile-badge hidden"></span>
+            </button>
+            <button class="tile t-purple" data-app="virus">
+              <span class="tile-ico">🦠</span><span class="tile-name">Virus Report</span>
+              <span id="badge-virus" class="tile-badge hidden"></span>
+            </button>
+            <button class="tile t-orange" data-app="alerts">
+              <span class="tile-ico">⚠️</span><span class="tile-name">Emergency Alerts</span>
+              <span id="badge-alerts" class="tile-badge hidden"></span>
+            </button>
+            <button class="tile t-teal" data-app="social">
+              <span class="tile-ico">🌐</span><span class="tile-name">Social</span>
+              <span id="badge-social" class="tile-badge hidden"></span>
+            </button>
+          </div>
+        </div>
+        <!-- App view -->
+        <div id="pc-app" class="pc-app hidden">
+          <div class="pc-app-head">
+            <button id="pc-back" class="btn small">◀ START</button>
+            <span id="pc-app-title"></span>
+          </div>
+          <div id="pc-app-body" class="pc-app-body"></div>
+        </div>
       </div>
       <div class="device-controls">
         <button class="btn close" data-close="screen-computer">LOG OFF (ESC)</button>
-      </div>
-    </div>
-
-    <!-- ===================== Device: Phone ===================== -->
-    <div id="screen-phone" class="device-screen phone hidden">
-      <div class="phone-body">
-        <div class="phone-notch"></div>
-        <div class="phone-head">EMERGENCY ALERTS</div>
-        <div id="phone-log" class="phone-log"></div>
-      </div>
-      <div class="device-controls">
-        <button class="btn close" data-close="screen-phone">CLOSE (ESC / P)</button>
       </div>
     </div>
 
@@ -111,14 +147,14 @@
         <h1 class="title-glitch" data-text="THE LONG NIGHT">THE LONG NIGHT</h1>
         <p class="subtitle">a zombie-outbreak observation horror</p>
         <p class="flavor">
-          It is an ordinary evening. You are home alone. The news is on in the
-          background. Somewhere out there, something has already begun — and it
-          is coming closer, one broadcast at a time.
+          It is an ordinary evening in your studio apartment. The TV hums, the
+          city glows outside the window. Somewhere out there the Peclip Virus
+          has just appeared — and it is coming closer, one broadcast at a time.
         </p>
         <div class="controls-help">
           <div><b>MOVE</b> — WASD / Arrow Keys</div>
-          <div><b>INTERACT</b> — E or Space</div>
-          <div><b>PHONE</b> — P &nbsp;·&nbsp; <b>CLOSE</b> — Esc</div>
+          <div><b>INTERACT</b> — E or Space &nbsp;·&nbsp; <b>BARRICADE</b> — B</div>
+          <div><b>COOK</b> — C at the kitchenette &nbsp;·&nbsp; <b>SLEEP</b> — E at the bed</div>
           <div><b>GOAL</b> — Survive three days. Watch. Decide. Stay sane.</div>
         </div>
         <div class="spawn-picker">
@@ -136,7 +172,7 @@
             <p id="zone-desc"></p>
           </div>
         </div>
-        <button id="start-btn" class="btn big">ENTER THE HOUSE</button>
+        <button id="start-btn" class="btn big">ENTER THE APARTMENT</button>
         <p class="warn">Contains flashing lights, sudden sounds &amp; unsettling themes.</p>
       </div>
     </div>

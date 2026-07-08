@@ -77,10 +77,10 @@ Any static server works (`npx serve`, VS Code "Live Server", etc.).
 
 | Action | Keys |
 | ------ | ---- |
-| Move around the house | `W A S D` or the **arrow keys** |
-| Interact (TV, computer, window, coffee, door) | `E`, `Space`, or `Enter` |
+| Move around the apartment | `W A S D` or the **arrow keys** |
+| Interact (TV, computer, window, kitchenette, bed, door) | `E`, `Space`, or `Enter` |
 | Barricade (when next to the door or a window) | `B` |
-| Open your phone (anywhere) | `P` |
+| Cook breakfast (at the kitchenette) | `C` |
 | Answer a knock | `Y` = open · `N` = keep shut |
 | Close a screen | `Esc` |
 | Mute / unmute | `M` or the 🔊 button |
@@ -91,14 +91,25 @@ Walk up to a fixture and a prompt tells you what you can do.
 
 ## What to do
 
-* **Watch the TV** to follow the Peclip Virus broadcast timeline as it airs,
-  and use the on-screen **◀ EARLIER / LATER ▶** buttons to replay reports you
-  missed (the newest one is marked **● LIVE**). **Read the government terminal**
-  for official alerts. Staring at catastrophe raises your stress — don't live
-  on the screens.
+* **Watch the TV** to follow the Peclip Virus broadcast timeline as it airs —
+  complete with a detailed, animated news reporter whose composure decays with
+  the country — and use **◀ EARLIER / LATER ▶** to replay reports you missed
+  (the newest is marked **● LIVE**). The National Report segments show the
+  live containment map right on screen.
+* **Use the computer** — the main hub. A tile home screen opens six apps:
+  **Messages** (friends text you as things fall apart, and you can type real
+  replies), **Newspaper** (apocalypse editions from first rumor to the final
+  photocopied Gray-Zone sheet), **National Map** (a live state-by-state
+  outbreak map that darkens as events progress), **Virus Report** (CDC/FEMA
+  sitreps), **Emergency Alerts**, and **Social** (a feed that slowly goes
+  silent). Unread counts show on every tile.
+* **Sleep in the bed** to skip ahead 2–3 broadcast events — you wake to a
+  changed world and a computer full of notifications.
+* **Cook breakfast** at the kitchenette (`C`): a finite supply of eggs,
+  chicken, and toast that calms your nerves and burns off fatigue.
 * **Peer through the windows** to see what's really happening outside.
-* **Drink coffee** to burn off fatigue and steady your nerves — but too much,
-  too fast, will leave you jittery and *more* stressed.
+* **Make coffee** with one press — instant, hot, grounding. It burns off
+  fatigue and visibly sharpens the room while the caffeine lasts.
 * **Barricade** the door and the windows (`B`). In the final collapse, weak
   barricades get broken down. Strong ones might just get you to dawn.
 * When someone **knocks**, look through the peephole and choose. Every choice

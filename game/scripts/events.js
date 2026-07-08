@@ -183,16 +183,16 @@
 
     // ---- THE FULL NATIONAL PECLIP VIRUS REPORT ----
     // (the last complete transmission before the TV dies)
-    { id: "20.0", phase: 4, channel: "NNC · NATIONAL REPORT",
+    { id: "19.15", phase: 4, channel: "NNC · NATIONAL REPORT",
       headline: "New York City Remains a Green Safe Zone",
       body: "Despite catastrophic outbreaks across the Eastern Coast, New York City remains a Green Safe Zone. Massive military fortifications, early containment, and strict curfews have kept infection levels extremely low. Border walls ring every borough. Helicopters patrol around the clock. Mandatory screenings. No civilian entry. The last jewel of the East.",
       ticker: "NYC: GREEN SAFE ZONE · walls around all boroughs · 24/7 helicopter patrols · NO CIVILIAN ENTRY",
       on(g) { g.flags.helicopter = true; } },
-    { id: "20.1", phase: 4, channel: "NNC · NATIONAL REPORT",
+    { id: "19.16", phase: 4, channel: "NNC · NATIONAL REPORT",
       headline: "Eastern Coast: Total Collapse Outside New York",
       body: "The rest of the Eastern Coast has suffered total collapse. All major states except New York have fallen into uncontrolled infection. Maine, New Hampshire, Massachusetts, Rhode Island, Connecticut, New Jersey, Delaware, Maryland, Virginia, the Carolinas, Georgia and Florida are now designated lost territories.",
       ticker: "LOST TERRITORIES: ME · NH · MA · RI · CT · NJ · DE · MD · VA · NC · SC · GA · FL" },
-    { id: "20.2", phase: 4, channel: "NNC · NATIONAL REPORT",
+    { id: "19.17", phase: 4, channel: "NNC · NATIONAL REPORT",
       headline: "Gray Zones Declared: 'Unrecoverable Territories'",
       body: "Military command has designated several regions Unrecoverable: California's Los Angeles mega-outbreak, southern Oregon, western Arizona, coastal Washington, Long Island, and northern New Jersey. These regions are fully isolated by military bases. No evacuation. No rescue. No government control.",
       ticker: "GRAY ZONES: CALIFORNIA · S. OREGON · W. ARIZONA · COASTAL WA · LONG ISLAND · N. NEW JERSEY — NO RESCUE",
@@ -202,11 +202,11 @@
           g.player.addStress(10);
         }
       } },
-    { id: "20.3", phase: 4, channel: "NNC · NATIONAL REPORT",
+    { id: "19.18", phase: 4, channel: "NNC · NATIONAL REPORT",
       headline: "Fortified Walls Rise Around the Gray Zones",
       body: "Fortified walls have been erected around the Gray Zones — reinforced concrete, steel plating, watchtowers, and automated floodlights. Their purpose: keep the infected inside, protect the neighboring safe zones, stage helicopter strike waves, and prevent all civilian entry.",
       ticker: "Walls sealed · Watchtowers manned · Floodlights automated · Nothing gets out" },
-    { id: "20.4", phase: 4, channel: "NNC · NATIONAL REPORT",
+    { id: "19.19", phase: 4, channel: "NNC · NATIONAL REPORT",
       headline: "Helicopter Strike Waves: 'Cluster Destruction Ops'",
       body: "Helicopter units have begun targeted destruction raids on massive virus clusters inside the Gray Zones. The pattern: enter the zone, destroy the cluster, burn the infected districts, extract survivors, withdraw before dark — then repeat the next day. These raids do not reclaim territory. They only reduce the viral mass.",
       ticker: "Strike waves daily · Burn the clusters · Extract survivors · Withdraw · Repeat",
@@ -218,33 +218,33 @@
           g.player.addStress(6);
         }
       } },
-    { id: "20.5", phase: 4, channel: "NNC · NATIONAL REPORT",
+    { id: "19.20", phase: 4, channel: "NNC · NATIONAL REPORT",
       headline: "Gangs and Militias Now Hold the Districts",
       body: "With government control gone, local gangs, militias and neighborhood groups have become the primary defense forces inside the Gray Zones — barricading streets, patrolling rooftops, arming civilians, raising makeshift walls. It is… ironic. The groups once considered dangerous are now the only thing preventing total infection spread.",
       ticker: "Districts held by gangs & militias · Rooftop patrols · Makeshift walls · 'It is… ironic.'" },
-    { id: "20.6", phase: 4, channel: "NNC · NATIONAL REPORT",
+    { id: "19.21", phase: 4, channel: "NNC · NATIONAL REPORT",
       headline: "Military Bases Become Fortress-Cities",
       body: "Military bases bordering the Gray Zones now operate as fortress-cities: launching daily raids, destroying virus clusters, passing leftover supplies over the wall to civilians, and retreating behind the wire by nightfall — then repeating operations at first light.",
       ticker: "Fortress-cities on the border · Daily raids · Supplies over the wall · Behind the wire by dark" },
-    { id: "20.7", phase: 4, channel: "NNC · NATIONAL REPORT",
+    { id: "19.22", phase: 4, channel: "NNC · NATIONAL REPORT",
       headline: "The Final Safe Zones",
       body: "These are the last functioning regions of the country: New York City, the Washington interior, the Oregon interior, Idaho, Montana, Wyoming, Colorado, Utah, the Nevada interior, the Arizona interior, New Mexico, Texas, Oklahoma, Kansas, Nebraska and Iowa. Everything else is contested, collapsed, or gray.",
       ticker: "FINAL SAFE ZONES: NYC · WA/OR/NV/AZ interiors · ID · MT · WY · CO · UT · NM · TX · OK · KS · NE · IA" },
-    { id: "20.8", phase: 4, channel: "NNC · SIGNING OFF",
+    { id: "19.23", phase: 4, channel: "NNC · SIGNING OFF",
       headline: "This Is Our Last Full Broadcast",
       body: "If you are inside a Gray Zone… you are on your own. If you are inside a Safe Zone… remain indoors. Avoid all contact. This is our last full broadcast. To everyone still out there — [the anchor's voice breaks] — good night, and good luck.",
       ticker: "· · · this is our last full broadcast · · · good night · · · good luck · · ·",
       on(g) { g.player.addStress(5); } },
 
-    { id: "19.12", phase: 4, channel: "· · · SIGNAL · · ·", special: "static",
+    { id: "19.24", phase: 4, channel: "· · · SIGNAL · · ·", special: "static",
       headline: "▓▓ SIGNAL DISTORTION ▓▓",
       body: "Static swallows the screen. Distorted voices bleed through — too slow, too many, overlapping. An emergency tone loops beneath them and will not stop.",
       ticker: "▓▓▓ distorted voices ▓▓▓ tone looping ▓▓▓" },
-    { id: "19.13", phase: 4, channel: "EAS · FINAL", special: "emergency",
+    { id: "19.25", phase: 4, channel: "EAS · FINAL", special: "emergency",
       headline: "⚠ EASTERN COAST UNDER FULL QUARANTINE ⚠",
       body: "The Eastern Coast is under full quarantine. No further broadcasts will be transmitted. This message will now repeat until the signal ends.",
       ticker: "⚠ FULL QUARANTINE ⚠ NO FURTHER BROADCASTS ⚠" },
-    { id: "19.14", phase: 4, channel: "NO SIGNAL", special: "black",
+    { id: "19.26", phase: 4, channel: "NO SIGNAL", special: "black",
       headline: "",
       body: "",
       ticker: "" },
@@ -310,6 +310,99 @@
       { from: "EMERGENCY ALERTS", gov: true, text: "CONTAINMENT DIRECTIVE. This grid is outside the wall. Sweep at dawn. There is no further evacuation. Signal ends." },
       { from: "Mom", text: "im here. whatever happens tonight i love you. stay in the dark. wait for the light. [SENT 1 of 1]" },
     ],
+  ];
+
+  /* ------------------------------------------------------------
+     COMPUTER HUB CONTENT — the main device.
+     Friend text threads (with typed replies), apocalypse
+     newspapers, virus-spread reports, and a social feed.
+     ------------------------------------------------------------ */
+
+  // Direct-message threads. `thread` lines unlock as the national
+  // phase rises; the player can reply (typed or quick), which appends
+  // their message plus this contact's canned answer.
+  const MESSAGES = [
+    { id: "priya", from: "Priya", color: "#c05a8a",
+      reply: "ok. ok. just keep talking to me. don't go quiet on me tonight 🖤",
+      thread: [
+        { phase: 0, text: "did the office email you? half of downtown called out sick lol" },
+        { phase: 1, text: "ok this isn't funny anymore. they're saying don't leave the house??" },
+        { phase: 2, text: "they SEALED my block. national guard on every corner. im scared" },
+        { phase: 3, text: "power keeps cutting. i can hear helicopters. are you seeing this" },
+        { phase: 4, text: "[image failed to send] …they cleared the building next to mine. lights off. i love you" },
+      ] },
+    { id: "marcus", from: "Marcus", color: "#4a7ac0",
+      reply: "good. lock everything. do NOT open that door for anyone, i mean it.",
+      thread: [
+        { phase: 0, text: "yo you good? my cousin at the hospital says they're slammed" },
+        { phase: 1, text: "curfew's real. 9pm. this is actually happening huh" },
+        { phase: 2, text: "shelter in place just hit my phone. you barricaded yet?" },
+        { phase: 3, text: "martial law downtown. don't trust the soldiers man. stay put" },
+        { phase: 4, text: "if you're reading this i made it to the compound on 4th. come if you can move" },
+      ] },
+    { id: "mom", from: "Mom", color: "#c0894a",
+      reply: "I love you more than anything. Stay in the dark. Wait for the light. 💛",
+      thread: [
+        { phase: 0, text: "Did you eat? There's soup in the freezer. Call me tomorrow." },
+        { phase: 1, text: "Sweetheart the news is scaring me. Lock your doors. Please answer." },
+        { phase: 2, text: "I can't reach your father. The lines keep dropping." },
+        { phase: 3, text: "If a soldier comes to your door DON'T go with them. Promise me." },
+        { phase: 4, text: "Whatever happens tonight, I'm so proud of you. [SENT 1 of 1]" },
+      ] },
+    { id: "unknown", from: "UNKNOWN", color: "#7a7a7a",
+      reply: "…who is this. how did you get this number.",
+      thread: [
+        { phase: 3, text: "wrong number probably but — if you're near 4th & Pine there's a wall going up. get inside it." },
+        { phase: 4, text: "gate closes at dawn. after that nobody gets in. your call." },
+      ] },
+  ];
+
+  // Apocalypse newspapers, unlocked per national phase.
+  const NEWSPAPERS = [
+    [{ paper: "THE DAILY LEDGER", date: "LATE EDITION", head: "Cruise Ship Held Off Coast Over 'Flu-Like' Illness",
+       byline: "by R. Halvorsen, Health Desk",
+       body: "A luxury liner returning from the Atlantic has been denied port after dozens of passengers reported fever, confusion, and severe dehydration. The CDC calls it 'a routine precaution.' Passengers describe a scene that sounds anything but routine." }],
+    [{ paper: "THE DAILY LEDGER", date: "MORNING EDITION", head: "'PECLIP VIRUS' NAMED AS CASES JUMP TO 400",
+       byline: "by R. Halvorsen, Health Desk",
+       body: "Health officials have named the pathogen the Peclip Virus as clusters appear in three coastal states. A 9 p.m. curfew takes effect tonight. 'Wash your hands and stay calm,' the governor said, in a statement that reassured no one." },
+     { paper: "CITY TRIBUNE", date: "EXTRA", head: "Doctors Describe 'Impossible' Symptoms",
+       byline: "by M. Okafor",
+       body: "Physicians report patients whose tissue is visibly decaying while they remain awake and violent. 'They don't respond to pain,' one ER nurse said before hanging up." }],
+    [{ paper: "CITY TRIBUNE", date: "OUTBREAK EDITION", head: "SHELTER IN PLACE — NEIGHBORHOODS SEALED",
+       byline: "Staff Report",
+       body: "Quarantine zones now ring the infected districts. Residents describe being trapped behind hasty barricades as the National Guard withdraws to defensive lines. Looting has begun in the eastern wards." },
+     { paper: "THE DAILY LEDGER", date: "SPECIAL", head: "GOVERNMENT FAILS TO CONTAIN SPREAD, SOURCES SAY",
+       byline: "by R. Halvorsen",
+       body: "Internal memos suggest containment collapsed 48 hours ago. 'We are past prevention,' an unnamed official wrote. 'We are into triage now.'" }],
+    [{ paper: "CITY TRIBUNE", date: "FINAL PRINT RUN", head: "MARTIAL LAW: THE SOLDIERS OWN THE STREETS",
+       byline: "Staff Report",
+       body: "Military units now hold the district. Evacuation corridors are collapsing one by one. This is the last edition our presses will run. Whoever finds this — good luck." }],
+    [{ paper: "THE UNDERGROUND SHEET", date: "PHOTOCOPIED · GRAY ZONE", head: "THE WALL IS FINISHED. WE ARE INSIDE IT.",
+       byline: "— whoever's still typing",
+       body: "No government. No rescue. The militias hold the blocks and the choppers burn the clusters at dawn. If you're reading this on a screen that still turns on, you're one of the lucky few. Keep it that way." }],
+  ];
+
+  // Virus-spread situation reports (per national phase).
+  const VIRUS_REPORTS = [
+    [{ title: "CDC SITREP 001 — CONTAINMENT", body: "Confirmed cases: ~50, single vector (maritime). Transmission: unknown. Mortality: under review. Public risk: LOW. Recommendation: standard hygiene." }],
+    [{ title: "CDC SITREP 014 — ELEVATED", body: "Confirmed cases: ~2,400 across 3 states. Transmission: bite / fluid contact, R0 estimated >6. Incubation: under 24h. Public risk: HIGH. Curfew advised." }],
+    [{ title: "CDC SITREP 037 — SEVERE", body: "Estimated cases: 90,000+. Vector now airborne-adjacent in dense clusters. Hosts remain mobile post-mortem-onset. Public risk: SEVERE. Shelter in place mandatory." }],
+    [{ title: "FEMA SITREP 061 — CRITICAL", body: "Cases uncountable. Eastern seaboard command lost. Military engaged intra-urban. Evacuation corridors 40% collapsed. Public risk: CRITICAL." }],
+    [{ title: "SITREP ——— [SIGNAL DEGRADED]", body: "No reliable count. Eastern Coast designated loss. Gray Zones sealed. Containment sweeps authorized at first light. This is the final automated report." }],
+  ];
+
+  // Social feed — a scroll of posts that curdles with the phase.
+  const SOCIAL = [
+    { phase: 0, user: "brunchbella", handle: "@bella_eats", text: "cruise ship drama off the coast 👀 imagine paying $4k to get quarantined lmaooo" },
+    { phase: 0, user: "TechFinance", handle: "@tf_daily", text: "Markets shrug off 'health scare.' Analysts say buy the dip." },
+    { phase: 1, user: "nurse_on_shift", handle: "@rn_amara", text: "i have never seen the ER like this. please. stay home. i'm begging you." },
+    { phase: 1, user: "ScannerFeed", handle: "@city_scanner", text: "MULTIPLE 10-54s downtown. 'subjects not responding to commands.' curfew confirmed 9pm." },
+    { phase: 2, user: "prepper_pete", handle: "@pete_ready", text: "TOLD. YOU. ALL. barricade your doors NOW. this is not a drill. #Peclip" },
+    { phase: 2, user: "mama_of_three", handle: "@jen_h", text: "they sealed our street. kids are scared. we have 2 days of food. praying." },
+    { phase: 3, user: "rooftop_survivor", handle: "@last_light", text: "helicopters all night. gunfire on 5th. if you see soldiers DO NOT go with them" },
+    { phase: 3, user: "ScannerFeed", handle: "@city_scanner", text: "[FEED INTERRUPTED]" },
+    { phase: 4, user: "compound_4th", handle: "@fourth_st", text: "gate closes at dawn. lights off, move quiet, knock the pattern. we have soup and a wall. that's everything now." },
+    { phase: 4, user: "———", handle: "@———", text: "░░░░ can anyone still ░░░░ read this ░░░░" },
   ];
 
   /* ------------------------------------------------------------
@@ -624,5 +717,8 @@
   };
 
   ZH.Events = Events;
-  ZH.Content = { TV_TIMELINE, GOV_ALERTS, PHONE_MSGS, ENDINGS, PHASES, ORDERS };
+  ZH.Content = {
+    TV_TIMELINE, GOV_ALERTS, PHONE_MSGS, ENDINGS, PHASES, ORDERS,
+    MESSAGES, NEWSPAPERS, VIRUS_REPORTS, SOCIAL,
+  };
 })(window.ZH = window.ZH || {});

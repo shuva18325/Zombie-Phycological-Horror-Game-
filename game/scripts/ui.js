@@ -1,17 +1,28 @@
 /* ============================================================
    ui.js — DOM view layer
-   Renders the HUD, the TV / computer / phone screens, the door
-   modal, toasts and the menu / ending overlays. The engine owns
-   the logic and input; this module only reflects state into the DOM.
+   HUD, toasts, the TV (with the animated news reporter and the
+   live mini-map), the COMPUTER HUB (tile OS: Messages with typed
+   replies, Newspapers, National Map, Virus Reports, Emergency
+   Alerts, Social feed), the door modal, day cards, menu/ending.
    Exposes: window.ZH.UI
    ============================================================ */
 (function (ZH) {
   "use strict";
 
+  const APP_TITLES = {
+    messages: "MESSAGES",
+    news: "NEWSPAPER",
+    map: "NATIONAL MAP",
+    virus: "VIRUS REPORT",
+    alerts: "EMERGENCY ALERTS",
+    social: "SOCIAL",
+  };
+
   const UI = {
     el: {},
-    toasts: [],
-    toastTimer: 0,
+    activeApp: null,
+    activeContact: null,
+    faceT: 0,
 
     init() {
       const $ = (id) => document.getElementById(id);
@@ -37,12 +48,17 @@
         tvHeadline: $("tv-headline"),
         tvBody: $("tv-body"),
         tvTicker: $("tv-ticker-text"),
+        tvFace: $("tv-face"),
+        tvMinimap: $("tv-minimap"),
         // computer
         computer: $("screen-computer"),
-        computerLog: $("computer-log"),
-        // phone
-        phone: $("screen-phone"),
-        phoneLog: $("phone-log"),
+        pcHome: $("pc-home"),
+        pcApp: $("pc-app"),
+        pcAppTitle: $("pc-app-title"),
+        pcAppBody: $("pc-app-body"),
+        pcBack: $("pc-back"),
+        pcClock: $("pc-clock"),
+        pcNet: $("pc-net"),
         // door
         doorModal: $("door-modal"),
         doorTitle: $("door-title"),
@@ -57,7 +73,6 @@
         endingStats: $("ending-stats"),
         mute: $("mute-btn"),
       };
-      // toast container
       const tc = document.createElement("div");
       tc.id = "toast-container";
       tc.style.cssText =
@@ -67,6 +82,17 @@
       document.getElementById("game-frame").appendChild(tc);
       this.el.toastContainer = tc;
       this.peepCtx = this.el.peephole.getContext("2d");
+      this.faceCtx = this.el.tvFace.getContext("2d");
+      this.minimapCtx = this.el.tvMinimap.getContext("2d");
+
+      // computer hub wiring
+      document.querySelectorAll(".tile").forEach((t) => {
+        t.addEventListener("click", () => {
+          const game = ZH.Engine.game;
+          if (game) this.openApp(game, t.dataset.app);
+        });
+      });
+      this.el.pcBack.addEventListener("click", () => this.showPcHome());
     },
 
     /* ---------------- HUD ---------------- */
@@ -94,7 +120,9 @@
       const b = game.barricades;
       const bar = (n) => "▮".repeat(n) + "▯".repeat(3 - n);
       this.el.barricade.innerHTML =
-        "DOOR <b>" + bar(b.door) + "</b>&nbsp;&nbsp;WINDOWS <b>" + bar(b.window) + "</b>";
+        "DOOR <b>" + bar(b.door) + "</b>&nbsp;&nbsp;WINDOWS <b>" + bar(b.window) +
+        "</b>&nbsp;&nbsp;FOOD <b>" + "▮".repeat(Math.max(0, game.supplies)) +
+        "▯".repeat(Math.max(0, 6 - game.supplies)) + "</b>";
     },
 
     showHUD() { this.el.hud.classList.remove("hidden"); },
@@ -130,7 +158,6 @@
         t.style.opacity = "0";
         setTimeout(() => t.remove(), 400);
       }, 4200);
-      // cap on-screen toasts
       while (this.el.toastContainer.children.length > 4) {
         this.el.toastContainer.firstChild.remove();
       }
@@ -139,12 +166,14 @@
       if (this.el.toastContainer) this.el.toastContainer.innerHTML = "";
     },
 
-    /* ---------------- TV ---------------- */
+    /* ================= TV ================= */
     openTV(game) {
+      this.faceT = 0;
       this.renderTV(game);
       this.el.tv.classList.remove("hidden");
     },
     closeTV() { this.el.tv.classList.add("hidden"); },
+
     renderTV(game) {
       const TL = ZH.Content.TV_TIMELINE;
       const idx = Math.max(0, Math.min(game.tvView, TL.length - 1));
@@ -156,62 +185,446 @@
       this.el.tvBody.textContent = item.body || "";
       this.el.tvTicker.textContent = item.ticker ? item.ticker + "  ·  " : "";
 
-      if (this.el.tvLive) {
-        if (live) {
-          this.el.tvLive.textContent = "● LIVE";
-          this.el.tvLive.classList.remove("replay");
-        } else {
-          this.el.tvLive.textContent = "◄ REPLAY " + (idx + 1) + "/" + (game.tvStage + 1);
-          this.el.tvLive.classList.add("replay");
-        }
+      if (live) {
+        this.el.tvLive.textContent = "● LIVE";
+        this.el.tvLive.classList.remove("replay");
+      } else {
+        this.el.tvLive.textContent = "◄ REPLAY " + (idx + 1) + "/" + (game.tvStage + 1);
+        this.el.tvLive.classList.add("replay");
       }
-      // dead-air / emergency segment styling
-      if (this.el.tvInner) {
-        this.el.tvInner.classList.remove("static", "emergency", "black");
-        if (item.special) this.el.tvInner.classList.add(item.special);
+
+      this.el.tvInner.classList.remove("static", "emergency", "black");
+      if (item.special) this.el.tvInner.classList.add(item.special);
+
+      // mini-map beside the reporter during National Report segments
+      const isReport = /NATIONAL REPORT|SIGNING OFF/.test(item.channel);
+      this.el.tvMinimap.classList.toggle("hidden", !isReport);
+      if (isReport) {
+        ZH.World.drawMap(this.minimapCtx, this.el.tvMinimap.width, this.el.tvMinimap.height, game);
       }
+      this.drawReporter(game, item);
     },
 
-    /* ---------------- Computer ---------------- */
+    /** Called each frame by the engine while the TV is open. */
+    tickTV(game, dt) {
+      this.faceT += dt;
+      const TL = ZH.Content.TV_TIMELINE;
+      const item = TL[Math.max(0, Math.min(game.tvView, TL.length - 1))];
+      if (!item.special) this.drawReporter(game, item);
+    },
+
+    /* The news reporter — a detailed, animated pixel-art face that
+       falls apart with the broadcast: tidy anchor → worried → sweating,
+       disheveled, bloodshot as the country collapses. */
+    drawReporter(game, item) {
+      const ctx = this.faceCtx;
+      const W = 120, H = 120;
+      const t = this.faceT;
+      const ph = game.nationalPhase != null ? game.nationalPhase : game.phase;
+      const grim = ph >= 3;
+      const final_ = ph >= 4;
+
+      ctx.imageSmoothingEnabled = false;
+      // studio backdrop
+      const bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, final_ ? "#2a1418" : "#1d3a52");
+      bg.addColorStop(1, final_ ? "#180a0c" : "#12253a");
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, W, H);
+      // backdrop stripe + logo
+      ctx.fillStyle = final_ ? "rgba(200,60,50,0.25)" : "rgba(120,180,220,0.15)";
+      ctx.fillRect(0, 16, W, 10);
+      ctx.fillStyle = final_ ? "#c04038" : "#3a7ab0";
+      ctx.fillRect(4, 4, 24, 10);
+      ctx.fillStyle = "#fff";
+      ctx.font = "7px monospace";
+      ctx.fillText("NNC", 7, 12);
+
+      // news desk
+      ctx.fillStyle = "#27313a";
+      ctx.fillRect(0, 100, W, 20);
+      ctx.fillStyle = "#1c242b";
+      ctx.fillRect(0, 100, W, 3);
+
+      // ---- body: suit, shirt, tie ----
+      ctx.fillStyle = "#23262e";
+      ctx.fillRect(28, 84, 64, 18);              // shoulders/suit
+      ctx.fillStyle = "#e8e6df";
+      ctx.beginPath();                            // shirt triangle
+      ctx.moveTo(54, 84); ctx.lineTo(66, 84); ctx.lineTo(60, 100);
+      ctx.closePath(); ctx.fill();
+      // tie (loosened + crooked when grim)
+      ctx.fillStyle = "#7a1f26";
+      if (grim) {
+        ctx.save();
+        ctx.translate(60, 86);
+        ctx.rotate(0.18);
+        ctx.fillRect(-3, 0, 6, 15);
+        ctx.restore();
+        // open collar
+        ctx.fillStyle = "#d9b08c";
+        ctx.fillRect(57, 84, 6, 3);
+      } else {
+        ctx.fillRect(57, 85, 6, 14);
+      }
+
+      // ---- head ----
+      const skin = final_ ? "#cbb39c" : grim ? "#d3ac88" : "#d9b08c";
+      const shade = final_ ? "#b39c86" : "#c09a78";
+      // neck
+      ctx.fillStyle = skin;
+      ctx.fillRect(53, 74, 14, 12);
+      // face
+      ctx.fillStyle = skin;
+      ctx.fillRect(40, 30, 40, 46);
+      ctx.fillRect(38, 38, 44, 30);               // cheeks/width
+      // jaw shading
+      ctx.fillStyle = shade;
+      ctx.fillRect(40, 68, 40, 8);
+      // ears
+      ctx.fillStyle = skin;
+      ctx.fillRect(34, 46, 6, 12);
+      ctx.fillRect(80, 46, 6, 12);
+      ctx.fillStyle = shade;
+      ctx.fillRect(36, 50, 2, 5);
+      ctx.fillRect(82, 50, 2, 5);
+
+      // hair (side part; stray strands when grim)
+      ctx.fillStyle = "#3a2e24";
+      ctx.fillRect(38, 22, 44, 12);
+      ctx.fillRect(36, 28, 8, 16);
+      ctx.fillRect(78, 28, 6, 14);
+      ctx.fillRect(44, 18, 32, 8);
+      if (grim) {
+        ctx.fillRect(42, 14, 3, 8);               // strands sticking up
+        ctx.fillRect(60, 12, 2, 9);
+        ctx.fillRect(72, 15, 3, 7);
+      }
+
+      // brows (level → angled worry)
+      ctx.fillStyle = "#2a2119";
+      if (ph >= 2) {
+        ctx.save(); ctx.translate(48, 42); ctx.rotate(0.22);
+        ctx.fillRect(-6, 0, 12, 3); ctx.restore();
+        ctx.save(); ctx.translate(72, 42); ctx.rotate(-0.22);
+        ctx.fillRect(-6, 0, 12, 3); ctx.restore();
+      } else {
+        ctx.fillRect(42, 41, 12, 3);
+        ctx.fillRect(66, 41, 12, 3);
+      }
+
+      // eyes (blink every ~3.4s; bloodshot at the end)
+      const blink = (t % 3.4) < 0.14;
+      const eyeWhite = final_ ? "#e8c9c4" : "#f2efe8";
+      for (const ex of [44, 68]) {
+        if (blink) {
+          ctx.fillStyle = shade;
+          ctx.fillRect(ex, 48, 10, 2);
+        } else {
+          ctx.fillStyle = eyeWhite;
+          ctx.fillRect(ex, 46, 10, 6);
+          ctx.fillStyle = "#31404e";
+          ctx.fillRect(ex + 3, 47, 4, 5);          // iris
+          ctx.fillStyle = "#10161c";
+          ctx.fillRect(ex + 4, 48, 2, 3);          // pupil
+          ctx.fillStyle = "rgba(255,255,255,0.8)";
+          ctx.fillRect(ex + 4, 47, 1, 1);          // catchlight
+          if (final_) {
+            ctx.fillStyle = "rgba(190,60,50,0.5)"; // bloodshot corners
+            ctx.fillRect(ex, 50, 2, 2);
+            ctx.fillRect(ex + 8, 50, 2, 2);
+          }
+        }
+      }
+      // eye bags when exhausted
+      if (grim) {
+        ctx.fillStyle = "rgba(90,60,60,0.45)";
+        ctx.fillRect(44, 53, 10, 2);
+        ctx.fillRect(68, 53, 10, 2);
+      }
+
+      // nose
+      ctx.fillStyle = shade;
+      ctx.fillRect(58, 50, 4, 10);
+      ctx.fillRect(56, 58, 8, 3);
+
+      // mouth — talking animation
+      const talking = !blink;
+      const open = talking ? 2 + Math.abs(Math.sin(t * 7)) * 4 : 2;
+      ctx.fillStyle = "#5a2a26";
+      ctx.fillRect(52, 65, 16, open);
+      ctx.fillStyle = "#3a1a18";
+      ctx.fillRect(54, 66, 12, Math.max(1, open - 3));
+
+      // stubble at the end of the world
+      if (final_) {
+        ctx.fillStyle = "rgba(58,46,36,0.5)";
+        for (let i = 0; i < 22; i++) {
+          const sx2 = 42 + ((i * 17) % 36);
+          const sy2 = 64 + ((i * 7) % 10);
+          ctx.fillRect(sx2, sy2, 1, 1);
+        }
+      }
+
+      // sweat drop sliding down the temple
+      if (grim) {
+        const sy = 38 + ((t * 14) % 30);
+        ctx.fillStyle = "rgba(190,220,240,0.8)";
+        ctx.fillRect(79, sy, 2, 3);
+      }
+
+      // scanline shimmer over the feed
+      ctx.fillStyle = "rgba(255,255,255,0.05)";
+      ctx.fillRect(0, (t * 34) % H, W, 2);
+      ctx.fillStyle = "rgba(0,0,0,0.12)";
+      for (let y = 0; y < H; y += 3) ctx.fillRect(0, y, W, 1);
+    },
+
+    /* ================= COMPUTER HUB ================= */
     openComputer(game) {
-      this.renderComputer(game);
+      this.showPcHome();
+      this.updateBadges(game);
+      this.el.pcClock.textContent = "DAY " + game.day + " · " + game.clockString();
+      const off = game.nationalPhase >= 4;
+      this.el.pcNet.textContent = off ? "● DEGRADED" : "● ONLINE";
+      this.el.pcNet.classList.toggle("offline", off);
       this.el.computer.classList.remove("hidden");
     },
     closeComputer() { this.el.computer.classList.add("hidden"); },
-    renderComputer(game) {
-      const log = this.el.computerLog;
-      log.innerHTML = "";
-      if (!game.computerAlerts.length) {
-        log.innerHTML = '<div class="entry"><span class="lvl">SYSTEM</span> — No active alerts. All systems nominal.</div>';
-      }
-      for (const a of game.computerAlerts) {
-        const div = document.createElement("div");
-        div.className = "entry" + (a.level === "CRITICAL" ? " critical" : "");
-        div.innerHTML = '<span class="lvl">[' + a.level + ']</span> ' + a.text;
-        log.appendChild(div);
-      }
-      log.scrollTop = log.scrollHeight;
+
+    showPcHome() {
+      this.activeApp = null;
+      this.el.pcApp.classList.add("hidden");
+      this.el.pcHome.classList.remove("hidden");
+      const game = ZH.Engine.game;
+      if (game) this.updateBadges(game);
     },
 
-    /* ---------------- Phone ---------------- */
-    openPhone(game) {
-      this.renderPhone(game);
-      this.el.phone.classList.remove("hidden");
+    updateBadges(game) {
+      for (const app in game.unread) {
+        const el = document.getElementById("badge-" + app);
+        if (!el) continue;
+        const n = game.unread[app];
+        el.classList.toggle("hidden", !n);
+        el.textContent = n > 9 ? "9+" : String(n);
+      }
     },
-    closePhone() { this.el.phone.classList.add("hidden"); },
-    renderPhone(game) {
-      const log = this.el.phoneLog;
-      log.innerHTML = "";
-      if (!game.phoneMsgs.length) {
-        log.innerHTML = '<div class="phone-msg"><span class="from">System</span>No messages.</div>';
+
+    openApp(game, app) {
+      this.activeApp = app;
+      game.unread[app] = 0;
+      this.el.pcHome.classList.add("hidden");
+      this.el.pcApp.classList.remove("hidden");
+      this.el.pcAppTitle.textContent = APP_TITLES[app] || app.toUpperCase();
+      const body = this.el.pcAppBody;
+      body.innerHTML = "";
+      switch (app) {
+        case "messages": this.renderMessages(game); break;
+        case "news": this.renderNews(game); break;
+        case "map": this.renderMap(game); break;
+        case "virus": this.renderVirus(game); break;
+        case "alerts": this.renderAlerts(game); break;
+        case "social": this.renderSocial(game); break;
       }
-      for (const m of game.phoneMsgs) {
+      ZH.Audio.blip();
+    },
+
+    /* ---- Messages: threads + typed replies ---- */
+    renderMessages(game) {
+      const body = this.el.pcAppBody;
+      body.innerHTML = "";
+      const contacts = ZH.Content.MESSAGES.filter((c) =>
+        (game.threads[c.id] || []).length > 0);
+      if (!contacts.length) {
+        body.innerHTML = "<p>No messages yet. A quiet night — enjoy it while it lasts.</p>";
+        return;
+      }
+      if (!this.activeContact || !contacts.some((c) => c.id === this.activeContact)) {
+        this.activeContact = contacts[0].id;
+      }
+
+      // contact tabs
+      const tabs = document.createElement("div");
+      tabs.className = "chat-tabs";
+      for (const c of contacts) {
+        const b = document.createElement("button");
+        b.className = "chat-tab" + (c.id === this.activeContact ? " active" : "");
+        b.textContent = c.from;
+        if (game.threadUnread[c.id]) {
+          const d = document.createElement("span");
+          d.className = "dot";
+          b.appendChild(d);
+        }
+        b.addEventListener("click", () => {
+          this.activeContact = c.id;
+          game.threadUnread[c.id] = 0;
+          this.renderMessages(game);
+        });
+        tabs.appendChild(b);
+      }
+      body.appendChild(tabs);
+      game.threadUnread[this.activeContact] = 0;
+
+      // thread
+      const thread = document.createElement("div");
+      thread.className = "chat-thread";
+      for (const m of (game.threads[this.activeContact] || [])) {
         const div = document.createElement("div");
-        div.className = "phone-msg" + (m.gov ? " gov" : "");
-        div.innerHTML = '<span class="from">' + m.from + "</span>" + m.text;
-        log.appendChild(div);
+        div.className = "chat-msg " + m.who;
+        div.textContent = m.text;
+        thread.appendChild(div);
       }
-      log.scrollTop = log.scrollHeight;
+      body.appendChild(thread);
+
+      // compose row
+      const compose = document.createElement("div");
+      compose.className = "chat-compose";
+      const input = document.createElement("input");
+      input.type = "text";
+      input.maxLength = 120;
+      input.placeholder = "Type a reply…";
+      const send = document.createElement("button");
+      send.className = "btn small";
+      send.textContent = "SEND";
+      const doSend = () => {
+        const txt = input.value.trim();
+        if (!txt) return;
+        input.value = "";
+        ZH.Engine.sendMessage(this.activeContact, txt);
+      };
+      send.addEventListener("click", doSend);
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") { doSend(); e.preventDefault(); }
+        e.stopPropagation(); // typing must never move the player
+      });
+      compose.appendChild(input);
+      compose.appendChild(send);
+      body.appendChild(compose);
+
+      // quick replies for one-click answers
+      const quick = document.createElement("div");
+      quick.className = "quick-replies";
+      for (const q of ["I'm okay.", "Are you safe?", "Stay inside. Lock everything.", "I love you."]) {
+        const b = document.createElement("button");
+        b.className = "btn";
+        b.textContent = q;
+        b.addEventListener("click", () => ZH.Engine.sendMessage(this.activeContact, q));
+        quick.appendChild(b);
+      }
+      body.appendChild(quick);
+
+      body.scrollTop = body.scrollHeight;
+    },
+
+    /* ---- Newspapers ---- */
+    renderNews(game) {
+      const body = this.el.pcAppBody;
+      const issues = [];
+      for (let p = 0; p <= game.nationalPhase; p++) {
+        for (const n of (ZH.Content.NEWSPAPERS[p] || [])) issues.push({ p, n });
+      }
+      if (!issues.length) {
+        body.innerHTML = "<p>No editions delivered yet.</p>";
+        return;
+      }
+      issues.reverse(); // newest first
+      for (const { p, n } of issues) {
+        const div = document.createElement("div");
+        div.className = "newspaper" + (p >= 4 ? " grim" : "");
+        div.innerHTML =
+          '<div class="np-mast">' + n.paper + "</div>" +
+          '<div class="np-date">' + n.date + " · DAY " + Math.min(game.day, 3) + "</div>" +
+          '<div class="np-head">' + n.head + "</div>" +
+          '<div class="np-by">' + n.byline + "</div>" +
+          '<div class="np-body">' + n.body + "</div>";
+        body.appendChild(div);
+      }
+    },
+
+    /* ---- National map ---- */
+    renderMap(game) {
+      const body = this.el.pcAppBody;
+      const wrap = document.createElement("div");
+      wrap.className = "map-wrap";
+      const canvas = document.createElement("canvas");
+      canvas.id = "map-canvas";
+      canvas.width = 520;
+      canvas.height = 400;
+      wrap.appendChild(canvas);
+      body.appendChild(wrap);
+      const note = document.createElement("div");
+      note.className = "map-note";
+      const notes = [
+        "All regions reporting normally.",
+        "Coastal counties under observation.",
+        "Quarantine lines forming along the seaboard.",
+        "Safe-Guarded cities marked in green. Travel is not advised.",
+        "Gray Zones are sealed behind the wall. This map will not update again.",
+      ];
+      note.textContent = notes[game.nationalPhase];
+      body.appendChild(note);
+      ZH.World.drawMap(canvas.getContext("2d"), canvas.width, canvas.height, game);
+    },
+
+    /* ---- Virus reports ---- */
+    renderVirus(game) {
+      const body = this.el.pcAppBody;
+      const icon = document.createElement("div");
+      icon.className = "virus-icon";
+      icon.textContent = "🦠";
+      body.appendChild(icon);
+      for (let p = game.nationalPhase; p >= 0; p--) {
+        for (const r of (ZH.Content.VIRUS_REPORTS[p] || [])) {
+          const div = document.createElement("div");
+          div.className = "virus-report";
+          div.innerHTML = "<h3>" + r.title + "</h3><p>" + r.body + "</p>";
+          body.appendChild(div);
+        }
+      }
+    },
+
+    /* ---- Emergency alerts ---- */
+    renderAlerts(game) {
+      const body = this.el.pcAppBody;
+      if (!game.computerAlerts.length) {
+        body.innerHTML = "<p>No active alerts. All systems nominal.</p>";
+        return;
+      }
+      for (let i = game.computerAlerts.length - 1; i >= 0; i--) {
+        const a = game.computerAlerts[i];
+        const div = document.createElement("div");
+        div.className = "alert-entry" + (a.level === "CRITICAL" ? " critical" : "");
+        div.innerHTML = '<span class="lvl">[' + a.level + "]</span> " + a.text;
+        body.appendChild(div);
+      }
+    },
+
+    /* ---- Social feed ---- */
+    renderSocial(game) {
+      const body = this.el.pcAppBody;
+      const posts = ZH.Content.SOCIAL.filter((p) => p.phase <= game.nationalPhase);
+      if (!posts.length) {
+        body.innerHTML = "<p>Feed is quiet.</p>";
+        return;
+      }
+      for (let i = posts.length - 1; i >= 0; i--) {
+        const p = posts[i];
+        const div = document.createElement("div");
+        div.className = "post";
+        div.innerHTML =
+          '<span class="post-user">' + p.user + '</span>' +
+          '<span class="post-handle">' + p.handle + "</span>" +
+          '<div class="post-text">' + p.text + "</div>";
+        body.appendChild(div);
+      }
+    },
+
+    /** Re-render the active messages thread (called after replies land). */
+    refreshMessagesIfOpen(game) {
+      if (this.activeApp === "messages" &&
+          !this.el.computer.classList.contains("hidden")) {
+        this.renderMessages(game);
+      }
     },
 
     /* ---------------- Door modal ---------------- */
@@ -223,7 +636,6 @@
       ZH.Renderer.drawPeephole(this.peepCtx, visitor, game);
       this.el.doorModal.classList.remove("hidden");
     },
-    // keep the peephole animated (twitching infected etc.)
     updateDoorPeephole(game, visitor) {
       if (this.el.doorModal.classList.contains("hidden")) return;
       ZH.Renderer.drawPeephole(this.peepCtx, visitor, game);
@@ -254,7 +666,8 @@
         "Doors answered: " + game.stats.doorsAnswered +
         " &nbsp;·&nbsp; Opened: " + game.stats.doorsOpened + "<br>" +
         "Barricades built: " + game.stats.barricadesBuilt +
-        " &nbsp;·&nbsp; Cups of coffee: " + game.stats.coffee;
+        " &nbsp;·&nbsp; Coffee: " + game.stats.coffee +
+        " &nbsp;·&nbsp; Meals cooked: " + game.stats.meals;
       this.el.ending.classList.remove("hidden");
     },
     hideEnding() { this.el.ending.classList.add("hidden"); },
