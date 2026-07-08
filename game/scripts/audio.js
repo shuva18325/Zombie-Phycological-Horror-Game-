@@ -190,6 +190,28 @@
       }
     },
 
+    rain(on) {
+      if (!this.ctx) return;
+      if (on) {
+        if (this._rainNode) return;
+        const src = this.ctx.createBufferSource();
+        src.buffer = this._noiseBuffer(2.0);
+        src.loop = true;
+        const lp = this.ctx.createBiquadFilter();
+        lp.type = "lowpass"; lp.frequency.value = 900;
+        const g = this.ctx.createGain();
+        g.gain.value = 0.0;
+        src.connect(lp); lp.connect(g); g.connect(this.master);
+        src.start();
+        g.gain.linearRampToValueAtTime(this.muted ? 0 : 0.14, this.ctx.currentTime + 2);
+        this._rainNode = { src, g };
+      } else if (this._rainNode) {
+        const r = this._rainNode; this._rainNode = null;
+        r.g.gain.linearRampToValueAtTime(0.0001, this.ctx.currentTime + 1.5);
+        setTimeout(() => { try { r.src.stop(); } catch (e) {} }, 1700);
+      }
+    },
+
     explosion() {
       // a strike-wave detonation: deep boom + falling rumble
       if (!this.ctx || this.muted) return;

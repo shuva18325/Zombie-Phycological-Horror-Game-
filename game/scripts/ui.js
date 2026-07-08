@@ -418,8 +418,10 @@
       pc.classList.toggle("cheap", slum);
       const user = this.el.computer.querySelector(".pc-user");
       if (user) user.textContent = slum ? "◉ chotu-phone" : "◉ home-desktop";
-      // the cheap phone gets Messages, Radio, Map, Alerts — nothing else
+      // the cheap phone gets Messages, Radio, Map, Alerts — and the
+      // Newspaper only once Chotu has physically delivered one
       const slumApps = ["messages", "radio", "map", "alerts"];
+      if (game.papersHave > 0) slumApps.push("news");
       document.querySelectorAll(".tile").forEach((tile) => {
         const app = tile.dataset.app;
         const hidden = slum ? slumApps.indexOf(app) === -1 : app === "radio";
@@ -565,6 +567,28 @@
     /* ---- Newspapers ---- */
     renderNews(game) {
       const body = this.el.pcAppBody;
+      if (game.zoneId === "slum") {
+        const have = ZH.Content.SLUM_NEWSPAPERS
+          .filter((n) => n.phase <= game.nationalPhase)
+          .slice(0, Math.max(0, game.papersHave));
+        if (!have.length) {
+          body.innerHTML = "<p>No papers yet. Chotu runs them lane to lane — feed the runner, get the news.</p>";
+          return;
+        }
+        for (let i = have.length - 1; i >= 0; i--) {
+          const n = have[i];
+          const div = document.createElement("div");
+          div.className = "newspaper" + (n.phase >= 3 ? " grim" : "");
+          div.innerHTML =
+            '<div class="np-mast">' + n.paper + "</div>" +
+            '<div class="np-date">' + n.date + " · hand-delivered</div>" +
+            '<div class="np-head">' + n.head + "</div>" +
+            '<div class="np-by">' + n.byline + "</div>" +
+            '<div class="np-body">' + n.body + "</div>";
+          body.appendChild(div);
+        }
+        return;
+      }
       const issues = [];
       for (let p = 0; p <= game.nationalPhase; p++) {
         for (const n of (ZH.Content.NEWSPAPERS[p] || [])) issues.push({ p, n });
@@ -703,6 +727,23 @@
       }
     },
 
+    /* ---------------- First-person window ---------------- */
+    openLookout(game, caption) {
+      const el = document.getElementById("screen-lookout");
+      const cap = document.getElementById("lookout-caption");
+      cap.textContent = caption || "";
+      el.classList.remove("hidden");
+      this.tickLookout(game);
+    },
+    tickLookout(game) {
+      const canvas = document.getElementById("lookout-canvas");
+      if (!canvas) return;
+      ZH.Renderer.drawLookout(canvas.getContext("2d"), canvas.width, canvas.height, game);
+    },
+    closeLookout() {
+      document.getElementById("screen-lookout").classList.add("hidden");
+    },
+
     /* ---------------- Door modal (knock decision OR free peek) ---------------- */
     openDoor(game, visitor, peek) {
       this.el.doorTitle.textContent = visitor.title;
@@ -710,10 +751,14 @@
       const yes = document.getElementById("door-yes");
       const no = document.getElementById("door-no");
       const back = document.getElementById("door-back");
+      yes.textContent = visitor.yesLabel || "OPEN THE DOOR";
+      no.textContent = visitor.noLabel || "KEEP IT SHUT";
       yes.classList.toggle("hidden", !!peek);
       no.classList.toggle("hidden", !!peek);
       back.classList.toggle("hidden", !peek);
-      this.el.doorTimer.classList.toggle("hidden", !!peek);
+      // choice cards have no countdown — only real knocks do
+      const noTimer = !!peek || !!visitor.yesLabel;
+      this.el.doorTimer.classList.toggle("hidden", noTimer);
       this.el.doorTimer.innerHTML = '<div id="door-timer-bar"></div>';
       this.doorBar = document.getElementById("door-timer-bar");
       ZH.Renderer.drawPeephole(this.peepCtx, visitor, game);

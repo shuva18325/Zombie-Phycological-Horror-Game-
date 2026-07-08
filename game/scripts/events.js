@@ -554,6 +554,115 @@
     ],
   ];
 
+  // Physical newspapers — someone has to HAND you these in the lane.
+  const SLUM_NEWSPAPERS = [
+    { phase: 0, paper: "DAINIK SAMACHAR", date: "MORNING EDITION", head: "Videsh Mein Cruise Ship Par Rahasyamayi Bimari",
+      byline: "PTI wire, page 7, under the cricket scores",
+      body: "A foreign cruise liner reports a strange illness. The Health Ministry says there is no cause for concern in India. In other news: the monsoon has eased, and the BMC promises the potholes on 90 Feet Road will be filled 'shortly.'" },
+    { phase: 1, paper: "DAINIK SAMACHAR", date: "SPECIAL", head: "PECLIP VIRUS REACHES MUMBAI PORT — 3 DOCK WORKERS POSITIVE",
+      byline: "by S. Kadam, City Desk",
+      body: "Thermal screening at every station. Masks in every queue. An unnamed BMC officer: 'We handled worse with less.' The aunties of the dense districts have organised their own fever registers — faster, sources say, than the official one." },
+    { phase: 2, paper: "DAINIK SAMACHAR", date: "CURFEW EDITION", head: "TRAINS STOPPED. CITY SEALED. LANES ON THEIR OWN.",
+      byline: "by S. Kadam, City Desk",
+      body: "The lifeline is cut: no locals, no buses, Section 144 everywhere. Southern wards are behind barricades. This paper is now printed on one press and carried by hand. If a boy in slippers hands you this — thank him, and give him a biscuit." },
+    { phase: 3, paper: "DAINIK SAMACHAR", date: "HAND PRESS", head: "THE RIVER IS KILLING THEM — DOCTORS CONFIRM THE IMPOSSIBLE",
+      byline: "final city edition",
+      body: "The infected walk into the Mithi and stop. KEM researchers confirm the water and the air burn the virus out of every host within hours. Only the ones wrapped in refuse survive. Sixty years the city called these lanes a disease. The lanes turned out to be the cure." },
+  ];
+
+  // Chotu's side-quests — the lane's nine-year-old courier network.
+  const CHOTU_QUESTS = [
+    { id: "meds", ask: "Uncle! Aunty needs her BP medicine from the chemist's cousin, three lanes over. Give me one tiffin for the run and I'll bring your share of watch rations back. Deal?",
+      yesLabel: "GIVE HIM A MEAL (1 FOOD)", noLabel: "NOT TODAY, CHOTU",
+      cost: 1, delay: 50,
+      done: "Chotu is back, breathing like a small train — medicine delivered, and the watch sent your ration share: two full tins!",
+      reward(g) { g.addSupplies(2); g.player.addStress(-8); } },
+    { id: "paper", ask: "Uncle! The press-wala printed papers BY HAND today. One biscuit and I'll bring you a copy before anyone else in the lane has read it. Deal?",
+      yesLabel: "GIVE HIM A BISCUIT (1 FOOD)", noLabel: "NOT TODAY, CHOTU",
+      cost: 1, delay: 40,
+      done: "Chotu slaps a folded newspaper into your hands like a relay baton. 'READ IT, uncle!' — the news app on your phone can open it now.",
+      reward(g) { g.papersHave = (g.papersHave || 0) + 1; g.unread.news++; g.player.addStress(-4); } },
+    { id: "boards", ask: "Uncle! Landlord Bhaiya's boys have extra boards but their runner is sick. I know the way. One meal for the trip and they'll board YOUR door first. Deal?",
+      yesLabel: "PACK HIM FOOD (1 FOOD)", noLabel: "NOT TODAY, CHOTU",
+      cost: 1, delay: 60,
+      done: "Heavy knocking — Bhaiya's boys, with boards. 'Chotu said you first.' Your door frame gets an extra plank, professionally nailed.",
+      reward(g) { g.barricades.door = Math.min(3, g.barricades.door + 1); g.player.addStress(-5); } },
+  ];
+
+  /* ------------------------------------------------------------
+     THE REPLY BRAIN — context-aware chat responses.
+     Each contact understands intents; warmth grows with bond
+     (how often you actually talk to them).
+     ------------------------------------------------------------ */
+  const BRAINS = {
+    priya: {
+      ok: ["ok good. GOOD. keep it that way 🖤", "promise me that stays true"],
+      love: ["…you picked a hell of a week to finally say that 🖤", "i love you too. survive this and tell me in person"],
+      fear: ["hey. breathe. in for 4, out for 4. i'm right here on the other end", "scared is smart right now. just don't open that door"],
+      food: ["eat SOMETHING. even crackers. you get mean when you're hungry", "i had cold rice for dinner. we feast when this is over"],
+      zombie: ["do NOT go look at it. i know you. do not.", "they're slow, you're smart, the door is locked. math says you win"],
+      question: ["still here. block's quiet tonight. helicopter woke me at 3", "alive, annoyed, drinking bad tea. you?"],
+      warm: ["you know you're the only one who still texts back? don't stop 🖤"],
+      default: ["ok. ok. just keep talking to me. don't go quiet on me tonight 🖤", "tell me something boring. i miss boring"],
+    },
+    marcus: {
+      ok: ["good. stay boring, stay alive", "that's what i want to hear. check your locks anyway"],
+      love: ["yeah yeah love you too man. BARRICADE THE WINDOWS", "we're getting a beer after this. both of us. that's a promise"],
+      fear: ["fear keeps you sharp. panic gets you killed. you're sharp", "lock it down and breathe, brother"],
+      food: ["ration it. two meals a day max. trust me", "my cousin says the relief trucks skip small streets. stretch what you got"],
+      zombie: ["do not engage. you're not the hero of this movie, you're the survivor", "saw two on 8th street. slow. blind-ish at night. stay dark"],
+      question: ["holding. boarded the back door today. you?", "compound's solid. wall's taller than me now"],
+      warm: ["when this is done you're moving closer. i'm not doing this long-distance apocalypse thing again"],
+      default: ["copy that. eyes open, lights low", "keep me posted. i mean it"],
+    },
+    mom: {
+      ok: ["Thank God. I sleep when you answer, you know.", "Good. Now eat something warm and prove it."],
+      love: ["I love you more than anything in this world. 💛", "My whole heart. Stay inside it."],
+      fear: ["Breathe, sweetheart. Fear is just love with nowhere to go. Put it in the barricades.", "You come from stubborn people. Be stubborn tonight."],
+      food: ["There is ALWAYS soup if you look properly.", "Eat the good things first, they spoil. The cans keep."],
+      zombie: ["Don't you dare open that door for anything that doesn't say your name.", "Your grandmother survived worse with less. So will you."],
+      question: ["I'm fine, the street is quiet, Mrs. Chen sends her love.", "We're managing. Don't worry about me — worry about breakfast."],
+      warm: ["You've messaged me every day. Whatever happens — you were a good one. The best one."],
+      default: ["I'm here. I'm always here. 💛", "Answer again in the morning so I can sleep."],
+    },
+    unknown: {
+      ok: ["good for you.", "then you're luckier than this block."],
+      fear: ["everyone's scared. the smart ones use it.", "then don't come to 4th & Pine soft. come ready."],
+      zombie: ["they follow sound. remember that.", "the uniforms are worse. remember that too."],
+      question: ["who i am doesn't matter. what i said does.", "gate. dawn. your call."],
+      default: ["…", "wrong number. right advice. take it."],
+    },
+    galli: {
+      ok: ["Ravi: GOOD 💪 Sana: chai when your shift ends · Meera: 🙏", "Arjun: that's the spirit yaar. lane strong 💪"],
+      love: ["Sana: awww 🖤 Ravi: ok ok family family, NOW CHECK THE DOOR", "Meera: we love you too. Arjun: speak for yourself 😂 (we do)"],
+      fear: ["Ravi: oi. FOUR of us are right here. count us. · Sana: making chai rn", "Meera: come sit on the mat, phone down · Arjun: fear is rent, we split it 5 ways"],
+      food: ["Sana: aunty's tiffin round is at 6, hold on · Ravi: i have half a packet of Parle-G with your name on it", "Arjun: whoever ate my pickle owes me their next egg. yes this is a threat"],
+      zombie: ["Ravi: heap moved?? BANG THE POT · Arjun: rods by the door, i counted", "Sana: watch cleared it, all fine · Meera: the water protects this lane 🙏"],
+      question: ["Ravi: all five accounted for 💪 · Sana: rota says you're on water duty btw", "Arjun: lane's quiet. Chotu says the far heap 'looked at him'. it's Chotu tho"],
+      warm: ["Ravi: you know what, this house got LUCKY when you moved in · Sana: agreed · Meera: 🖤 · Arjun: rent's still split evenly tho"],
+      default: ["Ravi: we're all here yaar. nobody sleeps alone tonight 💪", "Sana: chai's on. · Meera: 🙏"],
+    },
+    amma: {
+      ok: ["Then my prayers are working. I'll send more anyway.", "Good. Now drink water. BOILED water."],
+      love: ["My child. The whole village lights a diya for your lane. 💛", "I love you across every kilometre of this country."],
+      fear: ["You were born in a monsoon, beta. You don't drown easy.", "Hold your friends close. God lives in crowded rooms."],
+      food: ["Eat what aunty brings. Aunties are never wrong about food.", "When you come home I am making everything. EVERYTHING."],
+      zombie: ["The dirty water God gave your city is cleaning it now. Trust it.", "Stay away from the garbage, beta. Even before all this I said that."],
+      question: ["The village is safe. The buffalo recovered. Your room is ready.", "We are fine. The city ones came home walking. You hold on."],
+      warm: ["Every day you message, I put one rupee in the temple box. It's getting heavy, beta. Keep it heavy."],
+      default: ["Eat properly. Boil the water twice. The whole village prays for your lane. 💛"],
+    },
+    bhaiya: {
+      ok: ["Hm. Good. My buildings, my people, all standing.", "Then check on the widow in 3B for me. Quietly."],
+      fear: ["40 years in this lane. It has never once fallen. Not starting now.", "Scared? Good. Scared tenants check their locks."],
+      food: ["Water drums are full on every floor. Food comes with aunty's round.", "If anyone hoards in MY building, tell me. I'll redistribute. Loudly."],
+      zombie: ["My boys patrol the roofs at night. Nothing crosses my parapets.", "The heap ones are slow. My rods are not."],
+      question: ["Rent? In THIS economy? Don't insult us both. Buildings first.", "Back paths clear as of this morning. You didn't hear it from me."],
+      warm: ["You're the only tenant who asks how I am. When this ends, one month free. Tell NO ONE."],
+      default: ["Rent can wait. Roof can't. My boys are around if you need boards."],
+    },
+  };
+
   /* ------------------------------------------------------------
      ENDINGS
      ------------------------------------------------------------ */
@@ -980,5 +1089,6 @@
     TV_TIMELINE, GOV_ALERTS, PHONE_MSGS, ENDINGS, PHASES, ORDERS,
     MESSAGES, NEWSPAPERS, VIRUS_REPORTS, SOCIAL,
     SLUM_TV_TIMELINE, SLUM_RADIO, SLUM_MESSAGES, SLUM_ALERTS,
+    SLUM_NEWSPAPERS, CHOTU_QUESTS, BRAINS,
   };
 })(window.ZH = window.ZH || {});

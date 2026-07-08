@@ -14,6 +14,7 @@
 
   const SPRITE_FILES = {
     player: "assets/sprites/player.png",
+    player_slum: "assets/sprites/player_slum.png",
     house: "assets/sprites/house.png",
     tv: "assets/sprites/tv.png",
     computer: "assets/sprites/computer.png",
@@ -218,6 +219,7 @@
     drawRoom(game) {
       const ctx = this.ctx;
       const T = this._theme(game);
+      if (T.slum) { this.drawSlumRoom(game); return; }
 
       /* ---- back wall ---- */
       const wallGrad = ctx.createLinearGradient(0, 0, 0, 112);
@@ -737,56 +739,382 @@
       ctx.fillRect(216, 244, 176, 4);
     },
 
+    /* ============================================================
+       THE LANE ROOM — one small, poor, crowded, loved room.
+       Blue rough plaster, god-shelf, calendars, old wood-cased CRT
+       on a wall bracket, gingham bed, red cupboard, tarp pile.
+       ============================================================ */
+    drawSlumRoom(game) {
+      const ctx = this.ctx;
+      const kit = game.byId("kitchen"), bed = game.byId("bed"),
+            win = game.byId("window"), pho = game.byId("computer"),
+            tv = game.byId("tv"), door = game.byId("door");
+      const L = 140, R = 344; // the room is TINY — thick walls close in
+
+      /* everything beyond the walls: neighbors' brick + corrugation */
+      ctx.fillStyle = "#242e33";
+      ctx.fillRect(0, 0, this.W, this.H);
+      // neighbor brick texture, left
+      ctx.fillStyle = "#3a2f28";
+      ctx.fillRect(0, 0, L - 10, this.H);
+      ctx.strokeStyle = "rgba(20,14,10,0.5)";
+      for (let y = 0; y < this.H; y += 12) {
+        ctx.beginPath(); ctx.moveTo(0, y + 0.5); ctx.lineTo(L - 10, y + 0.5); ctx.stroke();
+      }
+      for (let x = 0; x < L - 10; x += 22) {
+        const off = ((x / 22) % 2) * 6;
+        for (let y = off; y < this.H; y += 24) {
+          ctx.beginPath(); ctx.moveTo(x + 11, y); ctx.lineTo(x + 11, y + 12); ctx.stroke();
+        }
+      }
+      // neighbor corrugation, right
+      ctx.fillStyle = "#4a5258";
+      ctx.fillRect(R + 26, 0, this.W - R - 26, this.H);
+      ctx.strokeStyle = "rgba(20,22,26,0.6)";
+      for (let x = R + 26; x < this.W; x += 7) {
+        ctx.beginPath(); ctx.moveTo(x + 0.5, 0); ctx.lineTo(x + 0.5, this.H); ctx.stroke();
+      }
+      // our own wall returns (the thickness of the walls themselves)
+      ctx.fillStyle = "#2c5d6a";
+      ctx.fillRect(L - 10, 0, 10, this.H);
+      ctx.fillRect(R + 16, 0, 10, this.H);
+      ctx.fillStyle = "#27525e";
+      ctx.fillRect(L - 4, 0, 4, this.H);
+      ctx.fillRect(R + 16, 0, 4, this.H);
+
+      /* rough blue plaster back wall (only as wide as the room) */
+      const wallGrad = ctx.createLinearGradient(0, 0, 0, 104);
+      wallGrad.addColorStop(0, "#3f8494");
+      wallGrad.addColorStop(1, "#326b78");
+      ctx.fillStyle = wallGrad;
+      ctx.fillRect(L, 10, R + 16 - L, 94);
+      for (let i = 0; i < 8; i++) {
+        const mx = L + (i * 47) % (R - L - 20), my = 14 + (i * 31) % 80;
+        ctx.fillStyle = i % 3 ? "rgba(20,50,60,0.18)" : "rgba(180,220,225,0.08)";
+        ctx.fillRect(mx, my, 12 + (i * 7) % 14, 7 + (i * 5) % 10);
+      }
+
+      /* corrugated ceiling strip + the bulb wire */
+      ctx.fillStyle = "#7d8085";
+      ctx.fillRect(L, 0, R + 16 - L, 10);
+      ctx.strokeStyle = "#5e6166";
+      for (let x = L; x < R + 16; x += 7) {
+        ctx.beginPath(); ctx.moveTo(x + 0.5, 0); ctx.lineTo(x + 0.5, 10); ctx.stroke();
+      }
+      ctx.strokeStyle = "rgba(15,12,10,0.8)";
+      ctx.beginPath(); ctx.moveTo(242, 10); ctx.lineTo(242, 26); ctx.stroke();
+
+      /* worn tile floor */
+      const floorGrad = ctx.createLinearGradient(0, 104, 0, this.H);
+      floorGrad.addColorStop(0, "#8f887c");
+      floorGrad.addColorStop(1, "#6e6558");
+      ctx.fillStyle = floorGrad;
+      ctx.fillRect(L, 104, R + 16 - L, this.H - 104);
+      ctx.strokeStyle = "rgba(50,45,38,0.4)";
+      for (let y = 104; y < this.H; y += 22) {
+        ctx.beginPath(); ctx.moveTo(L, y + 0.5); ctx.lineTo(R + 16, y + 0.5); ctx.stroke();
+      }
+      for (let x = L; x < R + 16; x += 24) {
+        ctx.beginPath(); ctx.moveTo(x + 0.5, 104); ctx.lineTo(x + 0.5, this.H); ctx.stroke();
+      }
+      ctx.fillStyle = "rgba(70,60,45,0.35)";
+      ctx.fillRect(200, 150, 22, 18);
+      ctx.fillRect(290, 210, 24, 20);
+
+      /* baseboard shadowline where wall meets floor */
+      ctx.fillStyle = "rgba(0,0,0,0.25)";
+      ctx.fillRect(L, 102, R + 16 - L, 3);
+
+      /* god-shelf over the cupboard + garland */
+      ctx.fillStyle = "#24525e";
+      ctx.fillRect(kit.fx - 2, 22, 34, 3);
+      ctx.fillStyle = "#c9762e";
+      ctx.fillRect(kit.fx, 12, 9, 10);
+      ctx.fillStyle = "#e8d44d";
+      ctx.fillRect(kit.fx + 2, 14, 5, 5);
+      ctx.fillStyle = "#7a3a8a";
+      ctx.fillRect(kit.fx + 13, 13, 8, 9);
+      ctx.fillStyle = "#e0a83c";
+      ctx.fillRect(kit.fx + 15, 15, 4, 4);
+      ctx.fillStyle = "#e8a020";
+      for (let i = 0; i < 5; i++) ctx.fillRect(kit.fx + i * 7, 26 + (i % 2) * 2, 3, 3);
+
+      /* Om plate + one calendar + pink clock, squeezed on the wall */
+      ctx.fillStyle = "#c98a2e";
+      ctx.beginPath(); ctx.arc(216, 30, 9, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = "#5e3a10";
+      ctx.beginPath(); ctx.arc(214, 31, 4, 0.5, Math.PI * 1.6); ctx.stroke();
+      ctx.fillStyle = "#5e3a10";
+      ctx.fillRect(217, 25, 2, 2);
+      ctx.fillStyle = "#e8e4da";
+      ctx.fillRect(226, 42, 20, 30);
+      ctx.fillStyle = "#a03028";
+      ctx.fillRect(226, 42, 20, 6);
+      ctx.strokeStyle = "rgba(60,60,80,0.5)";
+      for (let y = 52; y < 70; y += 5) {
+        ctx.beginPath(); ctx.moveTo(228, y); ctx.lineTo(244, y); ctx.stroke();
+      }
+      ctx.fillStyle = "#d88aa0";
+      ctx.beginPath(); ctx.arc(210, 56, 6, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#f4eef0";
+      ctx.beginPath(); ctx.arc(210, 56, 4, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = "#333";
+      ctx.beginPath();
+      ctx.moveTo(210, 56); ctx.lineTo(210, 53);
+      ctx.moveTo(210, 56); ctx.lineTo(212, 57);
+      ctx.stroke();
+
+      /* the bare bulb */
+      const lampOn = !game.flags.powerOut && this.world.flickerOn;
+      ctx.fillStyle = "#3a3630";
+      ctx.fillRect(239, 26, 6, 4);
+      ctx.fillStyle = lampOn ? "#ffe9a0" : "#6a6250";
+      ctx.beginPath(); ctx.arc(242, 34, 4, 0, Math.PI * 2); ctx.fill();
+
+      /* red steel cupboard (kitchen) + chai ring */
+      ctx.fillStyle = "#8a2822";
+      ctx.fillRect(kit.fx, kit.fy + 6, 30, kit.fh - 12);
+      ctx.fillStyle = "#a03028";
+      ctx.fillRect(kit.fx + 2, kit.fy + 8, 12, kit.fh - 16);
+      ctx.fillRect(kit.fx + 16, kit.fy + 8, 12, kit.fh - 16);
+      ctx.fillStyle = "#d8d4ca";
+      ctx.fillRect(kit.fx + 13, kit.fy + 32, 4, 7);
+      ctx.fillStyle = "#c9cdd2";
+      ctx.fillRect(kit.fx + 3, kit.fy, 14, 4);
+      ctx.fillRect(kit.fx + 6, kit.fy - 4, 9, 4);
+      ctx.fillStyle = "#23262c";
+      ctx.fillRect(kit.fx + 32, kit.fy + 48, 11, 11);   // kerosene ring
+      ctx.fillStyle = "#8a8d92";
+      ctx.fillRect(kit.fx + 34, kit.fy + 42, 7, 7);     // chai pot
+
+      /* the bed — wooden, thin mattress, gingham sheet */
+      ctx.fillStyle = "#7a4c26";
+      ctx.fillRect(bed.fx - 3, bed.fy - 7, 5, 52);
+      ctx.fillRect(bed.fx - 3, bed.fy - 7, bed.fw + 6, 5);
+      ctx.fillStyle = "#8a5a2e";
+      ctx.fillRect(bed.fx, bed.fy, bed.fw, 6);
+      ctx.fillStyle = "#e8e0c0";
+      ctx.fillRect(bed.fx, bed.fy + 5, bed.fw, 42);
+      ctx.fillStyle = "rgba(200,170,60,0.55)";
+      for (let gy2 = 0; gy2 < 6; gy2++) {
+        for (let gx2 = 0; gx2 < 9; gx2++) {
+          if ((gx2 + gy2) % 2 === 0) {
+            ctx.fillRect(bed.fx + gx2 * 7.4, bed.fy + 5 + gy2 * 7, 7.4, 7);
+          }
+        }
+      }
+      ctx.fillStyle = "#c05a2e";
+      ctx.fillRect(bed.fx + bed.fw - 18, bed.fy + 5, 18, 42);
+      ctx.fillStyle = "#e8a020";
+      for (let i = 0; i < 4; i++) {
+        ctx.fillRect(bed.fx + bed.fw - 18, bed.fy + 8 + i * 10, 18, 3);
+      }
+      ctx.fillStyle = "#f0ece0";
+      ctx.fillRect(bed.fx + 3, bed.fy + 7, 18, 10);
+      ctx.fillStyle = "#6e4222";
+      ctx.fillRect(bed.fx, bed.fy + 47, 4, 12);
+      ctx.fillRect(bed.fx + bed.fw - 4, bed.fy + 47, 4, 12);
+      ctx.fillStyle = "#8a7350";
+      ctx.fillRect(bed.fx + 8, bed.fy + 49, 18, 10);
+      ctx.fillStyle = "#7d8792";
+      ctx.fillRect(bed.fx + 32, bed.fy + 51, 20, 8);
+      const sick = (game.housemates || []).find((h) => h.status === "sick");
+      if (sick) {
+        ctx.fillStyle = "#c05a2e";
+        ctx.fillRect(bed.fx + 18, bed.fy + 8, 34, 13);
+        ctx.fillStyle = sick.skin;
+        ctx.fillRect(bed.fx + 11, bed.fy + 10, 8, 8);
+        ctx.fillStyle = "#181410";
+        ctx.fillRect(bed.fx + 10, bed.fy + 8, 10, 4);
+        const br = Math.sin(this.t * 3) * 0.7;
+        ctx.fillStyle = "rgba(255,255,255,0.10)";
+        ctx.fillRect(bed.fx + 18, bed.fy + 8 + br, 34, 2);
+      }
+
+      /* the one small window */
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(win.fx + 3, win.fy + 3, win.fw - 6, win.fh - 6);
+      ctx.clip();
+      this.drawOutside({ fx: win.fx + 3, fy: win.fy + 3, fw: win.fw - 6, fh: win.fh - 6 }, game);
+      ctx.restore();
+      ctx.strokeStyle = "#7da4ac";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(win.fx + 1.5, win.fy + 1.5, win.fw - 3, win.fh - 3);
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(win.fx + win.fw / 2, win.fy + 2); ctx.lineTo(win.fx + win.fw / 2, win.fy + win.fh - 2);
+      ctx.stroke();
+      ctx.lineWidth = 1;
+      ctx.fillStyle = "#8a4a7a";
+      ctx.fillRect(win.fx - 4, win.fy - 2, 6, win.fh + 4);
+
+      /* the OLD CRT on its wall bracket (top-right) */
+      ctx.fillStyle = "#4a3520";
+      ctx.fillRect(tv.fx - 3, tv.fy + tv.fh, tv.fw + 6, 4);
+      ctx.strokeStyle = "#3a2a18";
+      ctx.beginPath();
+      ctx.moveTo(tv.fx + 2, tv.fy + tv.fh + 4); ctx.lineTo(tv.fx + 9, tv.fy + tv.fh + 13);
+      ctx.moveTo(tv.fx + tv.fw - 2, tv.fy + tv.fh + 4); ctx.lineTo(tv.fx + tv.fw - 9, tv.fy + tv.fh + 13);
+      ctx.stroke();
+      ctx.fillStyle = "#6e4a2e";
+      ctx.fillRect(tv.fx, tv.fy, tv.fw, tv.fh);
+      ctx.fillStyle = "#5a3a22";
+      ctx.fillRect(tv.fx, tv.fy, tv.fw, 4);
+      ctx.fillStyle = "#3a2a18";
+      ctx.fillRect(tv.fx + tv.fw - 8, tv.fy + 5, 6, tv.fh - 10);
+      ctx.fillStyle = "#c9a13b";
+      ctx.beginPath(); ctx.arc(tv.fx + tv.fw - 5, tv.fy + 11, 2, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(tv.fx + tv.fw - 5, tv.fy + 19, 2, 0, Math.PI * 2); ctx.fill();
+
+      /* the phone on its charger, on a little crate below the CRT */
+      ctx.strokeStyle = "#1a1a1a";
+      ctx.beginPath();
+      ctx.moveTo(pho.fx + 16, pho.fy - 10);
+      for (let i = 0; i < 4; i++) {
+        ctx.quadraticCurveTo(pho.fx + 20, pho.fy - 7 + i * 4, pho.fx + 16, pho.fy - 4 + i * 4);
+      }
+      ctx.stroke();
+      ctx.fillStyle = "#5e4a30";
+      ctx.fillRect(pho.fx - 3, pho.fy + pho.fh, pho.fw + 6, 4);
+      ctx.fillStyle = "#15171c";
+      ctx.fillRect(pho.fx + 3, pho.fy + 4, pho.fw - 6, pho.fh - 8);
+
+      /* the battered metal door */
+      ctx.fillStyle = "#4e6a72";
+      ctx.fillRect(door.fx, door.fy, door.fw, door.fh);
+      ctx.strokeStyle = "#3a525a";
+      for (let y = door.fy + 8; y < door.fy + door.fh; y += 13) {
+        ctx.beginPath(); ctx.moveTo(door.fx + 2, y); ctx.lineTo(door.fx + door.fw - 2, y); ctx.stroke();
+      }
+      ctx.fillStyle = "#dcbd60";
+      ctx.fillRect(door.fx + 2, door.fy + 58, 3, 6);
+      ctx.fillStyle = "#2a2119";
+      ctx.fillRect(door.fx + door.fw - 7, door.fy + 18, 3, 3);
+
+      /* hanging clothes + tarp pile squeezed into corners */
+      ctx.strokeStyle = "#1d4550";
+      ctx.beginPath(); ctx.moveTo(L + 4, 34); ctx.lineTo(L + 34, 37); ctx.stroke();
+      ctx.fillStyle = "#c9a13b";
+      ctx.fillRect(L + 6, 37, 9, 12);
+      ctx.fillStyle = "#c05a8a";
+      ctx.fillRect(L + 18, 38, 9, 11);
+      ctx.fillStyle = "#5e6a70";
+      ctx.fillRect(L + 2, 214, 30, 26);
+      ctx.fillStyle = "#4a565c";
+      ctx.fillRect(L + 5, 208, 22, 9);
+
+      /* one worn mat + the friends (the heart of the room) */
+      ctx.fillStyle = "#6a7a52";
+      ctx.fillRect(158, 176, 120, 50);
+      ctx.strokeStyle = "#55643f";
+      ctx.strokeRect(161.5, 179.5, 113, 43);
+      ctx.strokeStyle = "rgba(0,0,0,0.12)";
+      for (let x = 166; x < 274; x += 9) {
+        ctx.beginPath(); ctx.moveTo(x + 0.5, 179); ctx.lineTo(x + 0.5, 222); ctx.stroke();
+      }
+      const seats = [[168, 186], [200, 200], [232, 186], [254, 202]];
+      const mates = (game.housemates || []).filter((h) => h.status === "well");
+      for (let i = 0; i < mates.length && i < seats.length; i++) {
+        const hm = mates[i];
+        const [hx, hy] = seats[i];
+        const bob = Math.sin(this.t * 1.6 + i * 1.7) * 0.8;
+        ctx.fillStyle = "#3a3630";
+        ctx.fillRect(hx - 2, hy + 12, 13, 5);
+        ctx.fillStyle = hm.shirt;
+        ctx.fillRect(hx, hy + bob, 9, 13);
+        ctx.fillStyle = hm.skin;
+        ctx.fillRect(hx + 2, hy - 6 + bob, 6, 6);
+        ctx.fillStyle = "#181410";
+        ctx.fillRect(hx + 1, hy - 8 + bob, 8, 3);
+        if (i === 1) {
+          ctx.fillStyle = "#c9cdd2";
+          ctx.fillRect(hx + 9, hy + 5 + bob, 3, 4);
+        }
+      }
+      // low chowki with steel tins
+      ctx.fillStyle = "#6e4b2d";
+      ctx.fillRect(290, 150, 30, 7);
+      ctx.fillStyle = "#583a20";
+      ctx.fillRect(292, 157, 3, 10); ctx.fillRect(314, 157, 3, 10);
+      ctx.fillStyle = "#c9cdd2";
+      ctx.fillRect(295, 144, 9, 6); ctx.fillRect(307, 146, 7, 4);
+    },
+
     /* ------------------------------------------------------------
        Dynamic pieces over the static room.
        ------------------------------------------------------------ */
     drawObjects(game) {
       const ctx = this.ctx;
+      const slum = this._theme(game).slum;
+      const tvO = game.byId("tv"), pho = game.byId("computer"),
+            kit = game.byId("kitchen"), win = game.byId("window"),
+            door = game.byId("door");
 
+      // the TV screen (bulging old glass on the slum CRT)
+      const scr = slum
+        ? { x: tvO.fx + 6, y: tvO.fy + 8, w: tvO.fw - 20, h: tvO.fh - 16 }
+        : { x: tvO.fx + 10, y: tvO.fy + 6, w: tvO.fw - 22, h: tvO.fh - 30 };
       const tvOnNow = game.tvOn && this.world.flickerOn && !game.flags.powerOut;
       if (tvOnNow) {
         const base = game.phase >= 3 ? "#4a1a1e" : game.phase >= 2 ? "#3a4a3c" : "#155e66";
         ctx.fillStyle = base;
-        ctx.fillRect(18, 34, 74, 54);
+        ctx.fillRect(scr.x, scr.y, scr.w, scr.h);
         ctx.fillStyle = game.phase >= 3 ? "rgba(220,90,80,0.35)" : "rgba(120,220,220,0.30)";
-        ctx.fillRect(18, 34 + ((this.t * 26) % 50), 74, 3);
+        ctx.fillRect(scr.x, scr.y + ((this.t * 26) % Math.max(4, scr.h - 4)), scr.w, 3);
         ctx.fillStyle = "rgba(255,255,255,0.10)";
-        ctx.fillRect(18, 34, 74, 12);
+        ctx.fillRect(scr.x, scr.y, scr.w, Math.min(12, scr.h / 3));
+        if (slum) { // the old set rolls and ghosts
+          ctx.fillStyle = "rgba(0,0,0,0.22)";
+          ctx.fillRect(scr.x, scr.y + ((this.t * 60) % scr.h), scr.w, 5);
+          ctx.fillStyle = "rgba(255,255,255,0.10)";
+          ctx.fillRect(scr.x + 2, scr.y + scr.h - 5, 4, 3); // glass glare
+        }
       } else {
         ctx.fillStyle = "#070809";
-        ctx.fillRect(18, 34, 74, 54);
+        ctx.fillRect(scr.x, scr.y, scr.w, scr.h);
       }
 
+      // monitor / phone screen glow
       if (!game.flags.powerOut && this.world.flickerOn) {
+        const mon = slum
+          ? { x: pho.fx + 5, y: pho.fy + 12, w: pho.fw - 10, h: pho.fh - 22 }
+          : { x: pho.fx + 25, y: pho.fy + 5, w: 34, h: 22 };
         ctx.fillStyle = game.phase >= 3 ? "rgba(210,80,70,0.55)" : "rgba(90,200,140,0.5)";
-        ctx.fillRect(341, 59, 34, 22);
+        ctx.fillRect(mon.x, mon.y, mon.w, mon.h);
         ctx.fillStyle = "rgba(255,255,255,0.12)";
-        ctx.fillRect(341, 59 + ((this.t * 18) % 18), 34, 2);
+        ctx.fillRect(mon.x, mon.y + ((this.t * 18) % Math.max(3, mon.h - 3)), mon.w, 2);
       }
 
+      // chai / coffee ready-light + steam
+      const lx = slum ? kit.fx + 46 : kit.fx + 8;
+      const ly = slum ? kit.fy + 50 : kit.fy + 4;
       const on = Math.sin(this.t * 3) > -0.5 && !game.flags.powerOut;
       ctx.fillStyle = on ? "#e0a83c" : "#5a4416";
-      ctx.fillRect(410, 48, 3, 3);
+      ctx.fillRect(lx + 2, ly + 2, 3, 3);
       if (this.world.flickerOn && !game.flags.powerOut) {
         ctx.fillStyle = "rgba(255,255,255,0.14)";
         for (let i = 0; i < 2; i++) {
-          const sx = 413 + i * 5 + Math.sin(this.t * 2 + i) * 1.5;
-          ctx.fillRect(sx, 42 - ((this.t * 6 + i * 3) % 7), 1, 2);
+          const sx = lx + 5 + i * 5 + Math.sin(this.t * 2 + i) * 1.5;
+          ctx.fillRect(sx, ly - 4 - ((this.t * 6 + i * 3) % 7), 1, 2);
         }
       }
       if (game.fx.cooking > 0) {
         ctx.fillStyle = "rgba(255,120,60," + (0.5 + 0.4 * this.world.flame) + ")";
-        ctx.beginPath(); ctx.arc(435, 60, 3, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath();
+        ctx.arc(slum ? kit.fx + 48 : kit.fx + 33, slum ? kit.fy + 64 : kit.fy + 16, 3, 0, Math.PI * 2);
+        ctx.fill();
       }
 
-      this.drawBarricade({ fx: 194, fy: 6, fw: 196, fh: 94 }, game.barricades.window);
-      this.drawBarricade({ fx: 456, fy: 58, fw: 24, fh: 128 }, game.barricades.door);
+      // barricades sit on the actual window/door rectangles
+      this.drawBarricade({ fx: win.fx, fy: win.fy, fw: win.fw, fh: win.fh }, game.barricades.window);
+      this.drawBarricade({ fx: door.fx, fy: door.fy, fw: door.fw, fh: door.fh }, game.barricades.door);
 
       if (game.doorKnocking) {
         const a = 0.4 + 0.6 * Math.abs(Math.sin(this.t * 6));
         ctx.fillStyle = "rgba(210,70,60," + a + ")";
         ctx.font = "10px monospace";
-        ctx.fillText("!", 464, 52);
+        ctx.fillText("!", door.fx + 8, door.fy - 4);
       }
 
       if (game.active && !game.anyScreenOpen()) {
@@ -876,6 +1204,41 @@
 
       // shared figures on the ground line
       this._outFigures(o, game, base);
+
+      // THE MONSOON — the sky opens and the lane becomes a river
+      if (slum && game.flags.monsoon) {
+        const gx2 = o.fx, gy2 = o.fy, gw2 = o.fw, gh2 = o.fh;
+        // flood water over the lower lane (drowns whatever was walking)
+        const wl = base - 2;
+        ctx.fillStyle = "rgba(58,84,96,0.65)";
+        ctx.fillRect(gx2, wl, gw2, gy2 + gh2 - wl);
+        ctx.strokeStyle = "rgba(180,210,220,0.25)";
+        for (let i = 0; i < 3; i++) {
+          const wy = wl + 3 + i * 4;
+          ctx.beginPath();
+          ctx.moveTo(gx2, wy + Math.sin(this.t * 2 + i) * 1.2);
+          ctx.lineTo(gx2 + gw2, wy + Math.cos(this.t * 2 + i) * 1.2);
+          ctx.stroke();
+        }
+        // washed-out walkers, face down in the flood, drifting
+        for (let i = 0; i < 3; i++) {
+          const fx2 = gx2 + ((this.t * 6 + i * 47) % (gw2 + 14)) - 7;
+          ctx.fillStyle = "#4a5444";
+          ctx.fillRect(fx2, wl + 4 + (i * 3) % 8, 8, 2);
+          ctx.fillStyle = "#5e82a0";
+          ctx.fillRect(fx2 + 3, wl + 3 + (i * 3) % 8, 2, 2); // fused plastic scrap
+        }
+        // the rain itself
+        ctx.strokeStyle = "rgba(200,225,235,0.35)";
+        for (let i = 0; i < 26; i++) {
+          const rx = gx2 + ((i * 37 + this.t * 160) % gw2);
+          const ry = gy2 + ((i * 53 + this.t * 340) % gh2);
+          ctx.beginPath();
+          ctx.moveTo(rx, ry);
+          ctx.lineTo(rx - 2, ry + 6);
+          ctx.stroke();
+        }
+      }
     },
 
     /* ---- CITY: skyline, sealed street ---- */
@@ -1386,16 +1749,13 @@
     drawPlayer(game) {
       const ctx = this.ctx;
       const p = game.player;
-      const spr = this._spr("player");
+      // the player wears the region: slum runs get the lane's own look
+      const spr = this._spr(game.zoneId === "slum" ? "player_slum" : "player")
+        || this._spr("player");
       const bob = p.moving ? Math.abs(Math.sin(p.animTime * 8)) * 1 : 0;
       const trem = p.stress > 70 ? (Math.random() - 0.5) * (p.stress - 70) / 30 : 0;
       const px = Math.round(p.x - p.w / 2 + trem);
       const py = Math.round(p.y - p.h / 2 - bob);
-
-      ctx.fillStyle = "rgba(0,0,0,0.35)";
-      ctx.beginPath();
-      ctx.ellipse(p.x, p.y + p.h / 2 - 1, p.w * 0.5, 3, 0, 0, Math.PI * 2);
-      ctx.fill();
 
       if (spr) {
         const frames = spr.width >= 300 ? 4 : 1;
@@ -1430,14 +1790,21 @@
 
       ctx.globalCompositeOperation = "destination-out";
       const p = game.player;
-      this._lightPool(p.x, p.y, 70, 0.85 * (w.flickerOn ? 1 : 0.4));
+      this._lightPool(p.x, p.y, 110, 0.7 * (w.flickerOn ? 1 : 0.4));
 
       const powered = !game.flags.powerOut && w.flickerOn;
-      if (game.tvOn && powered) this._lightPool(55, 62, 52, 0.6);
-      if (powered) this._lightPool(358, 70, 36, 0.5);
-      if (powered) this._lightPool(449, 38, 55, 0.55);
+      const T2 = this._theme(game);
+      const tvO = game.byId("tv"), pho = game.byId("computer");
+      if (game.tvOn && powered) {
+        this._lightPool(tvO.fx + tvO.fw / 2, tvO.fy + tvO.fh / 2, T2.slum ? 40 : 52, 0.6);
+      }
+      if (powered) this._lightPool(pho.fx + pho.fw / 2, pho.fy + pho.fh / 2, T2.slum ? 24 : 36, 0.5);
+      if (powered) {
+        if (T2.slum) this._lightPool(240, 34, 60, 0.6);          // the bare bulb
+        else this._lightPool(449, 38, 55, 0.55);
+      }
       // the farmhouse stove glows even when the grid dies
-      if (this._theme(game).stove) this._lightPool(439, 52, 30, 0.4);
+      if (T2.stove) this._lightPool(439, 52, 30, 0.4);
       ctx.restore();
     },
 
@@ -1493,6 +1860,44 @@
         }
         ctx.globalAlpha = 1;
       }
+    },
+
+    /* ------------------------------------------------------------
+       First-person window view: the whole outside scene, rendered
+       big on the lookout canvas, framed by the window itself.
+       ------------------------------------------------------------ */
+    drawLookout(lctx, W, H, game) {
+      const old = this.ctx;
+      this.ctx = lctx;
+      lctx.imageSmoothingEnabled = false;
+      try {
+        this.drawOutside({ fx: 0, fy: 0, fw: W, fh: H }, game);
+      } finally {
+        this.ctx = old;
+      }
+      // the window frame you're pressed against
+      const T = this._theme(game);
+      lctx.strokeStyle = T.slum ? "#7da4ac" : (T.winFrame || "#17171b");
+      lctx.lineWidth = 10;
+      lctx.strokeRect(5, 5, W - 10, H - 10);
+      lctx.lineWidth = 5;
+      lctx.beginPath();
+      lctx.moveTo(W / 2, 5); lctx.lineTo(W / 2, H - 5);
+      lctx.moveTo(5, H / 2); lctx.lineTo(W - 5, H / 2);
+      lctx.stroke();
+      lctx.lineWidth = 1;
+      // your breath fogs the glass at the bottom
+      const fog = lctx.createRadialGradient(W / 2, H, 10, W / 2, H, H * 0.5);
+      fog.addColorStop(0, "rgba(200,215,220,0.20)");
+      fog.addColorStop(1, "rgba(200,215,220,0)");
+      lctx.fillStyle = fog;
+      lctx.fillRect(0, H * 0.6, W, H * 0.4);
+      // glass vignette
+      const vg = lctx.createRadialGradient(W / 2, H / 2, H * 0.3, W / 2, H / 2, H * 0.85);
+      vg.addColorStop(0, "rgba(0,0,0,0)");
+      vg.addColorStop(1, "rgba(0,0,0,0.55)");
+      lctx.fillStyle = vg;
+      lctx.fillRect(0, 0, W, H);
     },
 
     /* ------------------------------------------------------------

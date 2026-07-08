@@ -41,8 +41,22 @@
     "The wall is finished somewhere out there. Nobody is coming to check on this street.",
   ];
 
-  // Interaction / draw layout (same in all three homes; the skin changes).
-  function buildObjects() {
+  // Interaction / draw layout. US homes share one floor plan; the
+  // slum room is a single CRAMPED room — thick walls, one small
+  // window, an old CRT on a wall bracket, the phone on its charger.
+  function buildObjects(zoneId) {
+    if (zoneId === "slum") {
+      // ~1/3 of the American floor plan: one cramped room, everything
+      // within arm's reach of everything else.
+      return [
+        { id: "kitchen",  kind: "kitchen",  fx: 144, fy: 46, fw: 36, fh: 66,  ix: 142, iy: 118, iw: 42, ih: 36 },
+        { id: "bed",      kind: "bed",      fx: 184, fy: 66, fw: 66, fh: 76,  ix: 184, iy: 124, iw: 66, ih: 36 },
+        { id: "window",   kind: "window",   fx: 254, fy: 24, fw: 42, fh: 44,  ix: 248, iy: 106, iw: 52, ih: 26 },
+        { id: "tv",       kind: "tv",       fx: 300, fy: 22, fw: 42, fh: 42,  ix: 298, iy: 106, iw: 44, ih: 26 },
+        { id: "computer", kind: "computer", fx: 306, fy: 80, fw: 24, fh: 34,  ix: 298, iy: 136, iw: 44, ih: 34 },
+        { id: "door",     kind: "door",     fx: 346, fy: 66, fw: 20, fh: 118, ix: 300, iy: 176, iw: 44, ih: 46 },
+      ];
+    }
     return [
       { id: "tv",       kind: "tv",       fx: 8,   fy: 28, fw: 96, fh: 84,  ix: 8,   iy: 112, iw: 96, ih: 42 },
       { id: "bed",      kind: "bed",      fx: 136, fy: 56, fw: 96, fh: 88,  ix: 136, iy: 118, iw: 98, ih: 48 },
@@ -116,13 +130,17 @@
     newGame(loc) {
       const player = new ZH.Player();
       player.x = 160; player.y = 205;
+      if (loc.state.zone === "slum") { player.x = 240; player.y = 170; }
       const state = loc.state;
       const zone = ZH.World.ZONES[state.zone];
       const area = ZH.World.AREAS[loc.areaId];
 
       this.game = {
         player,
-        objects: buildObjects(),
+        objects: buildObjects(state.zone),
+        bounds: state.zone === "slum"
+          ? { minX: 150, maxX: 336, minY: 122, maxY: 224 }
+          : { minX: 24, maxX: 446, minY: 114, maxY: 248 },
         // location
         stateId: state.id,
         stateName: state.name,
@@ -159,6 +177,19 @@
         sleptRecently: 0,
         sleptTonight: false,
         rescueKnocks: 0,
+        // the four friends — real characters who can sicken, leave, and save you
+        housemates: state.zone === "slum" ? [
+          { id: "ravi",  name: "Ravi",  shirt: "#c05a3a", skin: "#a0663a", status: "well", saved: false },
+          { id: "arjun", name: "Arjun", shirt: "#3a7ac0", skin: "#8a5a34", status: "well", saved: false },
+          { id: "sana",  name: "Sana",  shirt: "#3aa06a", skin: "#a0663a", status: "well", saved: false },
+          { id: "meera", name: "Meera", shirt: "#c0a03a", skin: "#8a5a34", status: "well", saved: false },
+        ] : [],
+        nextSicknessDay: 4 + Math.floor(Math.random() * 2),
+        monsoonDay: state.zone === "slum" ? 6 + Math.floor(Math.random() * 3) : -1,
+        nextQuestAt: 70 + Math.random() * 40,
+        papersHave: 0,
+        bond: {},
+        currentChoice: null,
         barricades: { door: 0, window: 0 },
         flags: {
           night: false, powerFlicker: false, powerOut: false,
@@ -194,6 +225,9 @@
         },
         addSupplies(n) {
           this.supplies = clamp(this.supplies + n, 0, MAX_FOOD);
+        },
+        presentMates() {
+          return this.housemates.filter((h) => h.status === "well" || h.status === "sick");
         },
       };
 
@@ -319,22 +353,28 @@
       if (g.modal === "tv") { ZH.UI.closeTV(); ZH.Audio.stopTvStatic(); }
       if (g.modal === "computer") ZH.UI.closeComputer();
       if (g.modal === "peek") { ZH.UI.closeDoor(); g.currentPeek = null; }
+      if (g.modal === "lookout") ZH.UI.closeLookout();
       g.modal = "none";
     },
 
+    // Press E at the window: you PUT YOUR FACE TO THE GLASS.
+    // A full first-person view of the street, live and animated.
     lookOutside() {
       const g = this.game;
       const lines = [
-        { t: "Everything out there looks perfectly, boringly normal. You should enjoy this while it lasts.", s: -2 },
+        { t: "Everything out there looks perfectly, boringly normal. Enjoy it while it lasts.", s: -2 },
         { t: "Fewer lights than usual tonight. Someone hurries past, glancing back over their shoulder.", s: +3 },
-        { t: "Something is wrong with the way the neighborhood sits — too still, too dark. A shape drags itself out of sight.", s: +7 },
-        { t: "Smoke on the horizon. Figures moving where no one should be. You should not be standing at this window.", s: +8 },
-        { t: "You lift the very edge of the curtain. What is out there, you will not describe — not even to yourself.", s: +10 },
+        { t: "Something is wrong with the way the neighborhood sits — too still, too dark.", s: +7 },
+        { t: "Smoke on the horizon. Figures moving where no one should be. Don't stand here long.", s: +8 },
+        { t: "You lift the very edge of the curtain. You wish you hadn't.", s: +10 },
       ];
       const l = lines[g.phase];
-      g.toast(l.t);
       g.player.addStress(l.s);
       if (g.phase >= 3) { g.flags.helicopter = g.flags.helicopter || Math.random() < 0.5; }
+      g.modal = "lookout";
+      ZH.Audio.blip();
+      ZH.UI.hidePrompt();
+      ZH.UI.openLookout(g, l.t);
     },
 
     drinkCoffee() {
@@ -490,14 +530,38 @@
     /* ------------------------------------------------------------
        Messages
        ------------------------------------------------------------ */
+    /* The reply brain: reads what you typed, answers in character,
+       and warms up the more you actually talk to someone. */
+    replyFor(contact, text) {
+      const g = this.game;
+      const brain = ZH.Content.BRAINS[contact.id];
+      if (!brain) return contact.reply;
+      const t = (text || "").toLowerCase();
+      let intent = "default";
+      if (/love|❤|🖤|💛|miss you|miss u/.test(t)) intent = "love";
+      else if (/scared|afraid|help|worried|panic|can'?t do this/.test(t)) intent = "fear";
+      else if (/food|eat|hungry|water|supplies|cook/.test(t)) intent = "food";
+      else if (/zombie|walker|infected|kachra|heap|bite|monster/.test(t)) intent = "zombie";
+      else if (/\?/.test(t)) intent = "question";
+      else if (/ok|okay|fine|good|safe|alive|we're all/.test(t)) intent = "ok";
+      const bond = g.bond[contact.id] || 0;
+      if (bond >= 4 && brain.warm && Math.random() < 0.3) {
+        return brain.warm[bond % brain.warm.length];
+      }
+      const pool = brain[intent] || brain.default;
+      return pool[bond % pool.length];
+    },
+
     sendMessage(contactId, text) {
       const g = this.game;
       const contact = g.contactsRef.find((c) => c.id === contactId);
       if (!contact || !g.threads[contactId]) return;
       g.threads[contactId].push({ who: "me", text });
+      g.bond[contactId] = (g.bond[contactId] || 0) + 1;
       ZH.UI.refreshMessagesIfOpen(g);
       g.player.addStress(-2);
 
+      const reply = this.replyFor(contact, text);
       const dead = g.nationalPhase >= 4 && g.zoneId !== "slum" && contactId !== "mom";
       setTimeout(() => {
         if (g !== this.game) return;
@@ -505,7 +569,7 @@
           g.threads[contactId].push({ who: "sys", text: "✖ Message could not be delivered." });
           g.player.addStress(4);
         } else {
-          g.threads[contactId].push({ who: "them", text: contact.reply });
+          g.threads[contactId].push({ who: "them", text: reply });
         }
         if (ZH.UI.activeApp === "messages" && g.modal === "computer") {
           ZH.UI.refreshMessagesIfOpen(g);
@@ -523,6 +587,31 @@
     triggerKnock() {
       const g = this.game;
       let visitor = null;
+      // Chotu's courier runs (slum, while the lanes still function)
+      if (!visitor && g.zoneId === "slum" && !g.chotuQuest &&
+          g.timeElapsed >= g.nextQuestAt && g.phase >= 1 && g.phase <= 3) {
+        g.nextQuestAt = g.timeElapsed + 180 + Math.random() * 80;
+        const q = ZH.Content.CHOTU_QUESTS[(g.stats.quests || 0) % ZH.Content.CHOTU_QUESTS.length];
+        const self = this;
+        visitor = {
+          sprite: "person", color: "#3a9ac0",
+          title: "CHOTU — WITH A JOB",
+          desc: q.ask,
+          yesLabel: q.yesLabel, noLabel: q.noLabel,
+          resolve(choice, game) {
+            if (choice === "yes") {
+              if (game.supplies < q.cost) {
+                return { stress: 2, message: "You check the basket — empty hands. 'Next time, uncle!' Chotu sprints off to ask the next house." };
+              }
+              game.addSupplies(-q.cost);
+              game.stats.quests = (game.stats.quests || 0) + 1;
+              game.chotuQuest = { due: game.timeElapsed + q.delay, done: q.done, reward: q.reward };
+              return { stress: -3, message: "Chotu pockets it like contraband, salutes, and VANISHES down the lane. Now you wait." };
+            }
+            return { stress: 2, message: "'FINE, uncle.' He's already knocking next door. The lane's errands wait for no one." };
+          },
+        };
+      }
       if (g.day >= RESCUE_DAY && g.phase >= 3) {
         g.rescueKnocks++;
         if (g.rescueKnocks % 2 === 1) {
@@ -567,6 +656,7 @@
       if (res.message) g.toast(res.message);
 
       if (res.ending) {
+        if (res.ending === "infected" && this.trySave("door")) return;
         if (choice === "yes" && visitor.sprite === "infected") ZH.Audio.scream();
         if (visitor.sprite === "soldier") ZH.Audio.thud();
         if (ZH.Content.ENDINGS[res.ending].mood !== "good") {
@@ -633,11 +723,129 @@
       }
       g.sleptTonight = false;
 
+      // the monsoon breaks over the lane
+      if (g.zoneId === "slum" && g.day === g.monsoonDay) {
+        g.flags.monsoon = true;
+        ZH.Audio.rain(true);
+        g.nextKnockAt = Math.max(g.nextKnockAt, g.timeElapsed + 25);
+        this.showDayCard(g.day,
+          "THE MONSOON. The sky opens like a wound and the lane becomes a river. " +
+          "Water pours through the heaps — and what was sleeping inside them washes out into the open, flailing, drowning. " +
+          "The radio: 'Stay in. Let the rain do the work.'");
+        g.player.addStress(6);
+        return;
+      }
+      if (g.zoneId === "slum" && g.flags.monsoon) {
+        g.flags.monsoon = false;
+        ZH.Audio.rain(false);
+        ZH.Renderer.world.shamblers = [];
+        g.nextHorrorAt = Math.max(g.nextHorrorAt, g.timeElapsed + 30);
+        g.player.addStress(-8);
+        this.showDayCard(g.day,
+          "The rain stops before dawn. The lane drips and steams. The heaps sit flat and quiet, " +
+          "washed half away — and everything that crawled out of them last night went down the Mithi with the flood. " +
+          "The watch counts the lane: everyone's here.");
+        return;
+      }
+
       const flavor = DAY_FLAVOR[Math.min(4, phaseForDay(g.day))] +
         (g.day >= RESCUE_DAY && g.phase >= 3
           ? " Listen for the knock — some of them are real ways out now."
           : "");
       this.showDayCard(g.day, flavor);
+    },
+
+    /* ------------------------------------------------------------
+       Housemates: fever in a crowded room. You decide what happens.
+       ------------------------------------------------------------ */
+    housemateFever() {
+      const g = this.game;
+      const candidates = g.housemates.filter((h) => h.status === "well");
+      if (!candidates.length) { g.nextSicknessDay = g.day + 99; return; }
+      const mate = candidates[Math.floor(Math.random() * candidates.length)];
+      g.nextSicknessDay = g.day + 3 + Math.floor(Math.random() * 3);
+      mate.status = "sick";
+      this.showChoice({
+        sprite: "person", color: mate.shirt,
+        title: mate.name.toUpperCase() + " HAS A FEVER",
+        desc: mate.name + " is shivering on the mat, eyes glassy, joking badly about it. It's dengue season — it's PROBABLY dengue. But there is no clinic, no doctor, and no way to be sure. The room goes quiet, waiting for you.",
+        yesLabel: "TEND TO " + mate.name.toUpperCase() + " YOURSELF",
+        noLabel: "SEND THEM TO AUNTY'S SICK-ROOM",
+        onYes: () => {
+          if (Math.random() < 0.18) {
+            mate.status = "lost";
+            g.player.addStress(24);
+            g.toast("The fever climbs all night. By morning " + mate.name + " isn't " + mate.name +
+              " anymore — the watch comes with rods and blankets, gentle as they can be. The mat has an empty place now.");
+          } else {
+            setTimeout(() => {
+              if (g !== this.game) return;
+              mate.status = "well";
+              g.toast(mate.name + "'s fever breaks by evening — dengue-season fever, nothing worse. They sit up asking for chai and everyone breathes again.");
+              g.player.addStress(-10);
+            }, 20000);
+            g.toast("You sponge " + mate.name + "'s forehead and stay close. The others keep watch in shifts around you.");
+          }
+        },
+        onNo: () => {
+          mate.status = "gone";
+          g.player.addStress(9);
+          g.toast("The watch carries " + mate.name + " to the aunty network's sick-room, three lanes over. Safer for everyone. The room is quieter than you'd like tonight.");
+          // they come back if it really was just dengue
+          setTimeout(() => {
+            if (g !== this.game) return;
+            if (Math.random() < 0.7) {
+              mate.status = "well";
+              g.toast("A familiar knock-pattern — " + mate.name + " is BACK, thinner and grinning. 'Dengue,' they say, like a trophy. The mat is full again.");
+              g.player.addStress(-12);
+            }
+          }, 45000);
+        },
+      });
+    },
+
+    /* Generic YES/NO choice card (reuses the door modal). */
+    showChoice(cfg) {
+      const g = this.game;
+      g.currentChoice = cfg;
+      g.modal = "choice";
+      ZH.UI.hidePrompt();
+      ZH.UI.openDoor(g, cfg, false);
+    },
+
+    resolveChoice(choice) {
+      const g = this.game;
+      const c = g.currentChoice;
+      if (!c) return;
+      g.currentChoice = null;
+      ZH.UI.closeDoor();
+      g.modal = "none";
+      if (choice === "yes" && c.onYes) c.onYes();
+      if (choice === "no" && c.onNo) c.onNo();
+    },
+
+    /* A housemate throws themselves between you and the ending. */
+    trySave(context) {
+      const g = this.game;
+      if (g.zoneId !== "slum") return false;
+      const heroes = g.housemates.filter((h) => h.status === "well" && !h.saved);
+      if (!heroes.length) return false;
+      const hero = heroes[Math.floor(Math.random() * heroes.length)];
+      hero.saved = true;
+      g.player.addStress(18);
+      g.fx.redFlash = 0.4;
+      ZH.Audio.thud();
+      if (context === "breach") {
+        g.barricades.door = Math.min(3, g.barricades.door + 1);
+        g.toast("⚡ " + hero.name + " is already moving — slams their whole body against the frame and jams a rod across it. 'NOT TONIGHT,' they scream. The door holds. Your heart doesn't slow for an hour.");
+      } else {
+        g.toast("⚡ A hand yanks you backward by the collar — " + hero.name + " — and the door slams on the thing's arm. Rods finish it through the gap. You owe them your life, and everyone knows it.");
+      }
+      if (Math.random() < 0.35) {
+        hero.status = "gone";
+        g.toast(hero.name + " got scraped in the scuffle. The watch walks them to aunty's sick-room to be safe. The mat feels enormous tonight.");
+      }
+      return true;
     },
 
     /* ------------------------------------------------------------
@@ -670,6 +878,10 @@
           if (g.doorTimer <= 0) this.resolveDoor("no");
         } else if (g.modal === "peek") {
           ZH.UI.updateDoorPeephole(g, g.currentPeek);
+        } else if (g.modal === "lookout") {
+          ZH.UI.tickLookout(g);
+        } else if (g.modal === "choice") {
+          if (g.currentChoice) ZH.UI.updateDoorPeephole(g, g.currentChoice);
         } else if (g.modal === "day") {
           // cinematic pause
         } else if (g.modal !== "none") {
@@ -690,8 +902,7 @@
 
     updateActive(dt) {
       const g = this.game, p = g.player;
-      const bounds = { minX: 24, maxX: 446, minY: 114, maxY: 248 };
-      p.update(dt, this.input, bounds);
+      p.update(dt, this.input, g.bounds);
 
       g.timeElapsed += dt;
       const tInDay = g.timeElapsed % DAY_LENGTH;
@@ -715,9 +926,29 @@
 
       if (p.stress >= 100) { this.triggerEnding("panic"); return; }
 
-      // four friends in the room: stress never climbs the way it does alone
+      // friends in the room: stress never climbs the way it does alone —
+      // and SITTING WITH THEM (near the mat) melts it away far faster
+      // than anything in America can
       if (g.zoneId === "slum" && p.stress > 0) {
-        p.addStress(-dt * (g.phase >= 4 ? 0.35 : 0.6));
+        const n = g.presentMates().length;
+        const base = 0.12 * n;
+        const dx = p.x - 205, dy = p.y - 200;   // the mat, where they sit
+        const near = n > 0 && (dx * dx + dy * dy) < 75 * 75;
+        p.addStress(-dt * (base + (near ? 1.1 : 0)) * (g.phase >= 4 ? 0.65 : 1));
+      }
+
+      // Chotu's courier runs come home
+      if (g.chotuQuest && g.timeElapsed >= g.chotuQuest.due) {
+        const q = g.chotuQuest;
+        g.chotuQuest = null;
+        g.toast("🏃 " + q.done);
+        try { q.reward(g); } catch (e) {}
+      }
+
+      // sickness in a crowded room (one housemate at a time)
+      if (g.zoneId === "slum" && g.day >= g.nextSicknessDay && g.modal === "none" &&
+          !g.doorKnocking && !g.currentChoice) {
+        this.housemateFever();
       }
 
       this.updateProximity();
@@ -838,7 +1069,7 @@
           g.damageBarricade(which, 1);
           g.toast("Something slams into the " + which + ". Wood cracks. The barricade buckles but holds.");
           g.player.addStress(9);
-        } else {
+        } else if (!this.trySave("breach")) {
           g.toast("The barricade explodes inward. They're inside.");
           g.player.addStress(25);
           this.queueEnding("overrun", 1400);
@@ -874,8 +1105,14 @@
         });
       });
 
-      document.getElementById("door-yes").addEventListener("click", () => this.resolveDoor("yes"));
-      document.getElementById("door-no").addEventListener("click", () => this.resolveDoor("no"));
+      document.getElementById("door-yes").addEventListener("click", () => {
+        if (this.game && this.game.modal === "choice") this.resolveChoice("yes");
+        else this.resolveDoor("yes");
+      });
+      document.getElementById("door-no").addEventListener("click", () => {
+        if (this.game && this.game.modal === "choice") this.resolveChoice("no");
+        else this.resolveDoor("no");
+      });
       document.getElementById("door-back").addEventListener("click", () => this.closeScreen());
 
       document.getElementById("mute-btn").addEventListener("click", () => {
@@ -912,7 +1149,12 @@
         else if (k === "n") this.resolveDoor("no");
         return;
       }
-      if (g.modal === "peek") {
+      if (g.modal === "choice") {
+        if (k === "y") this.resolveChoice("yes");
+        else if (k === "n") this.resolveChoice("no");
+        return;
+      }
+      if (g.modal === "peek" || g.modal === "lookout") {
         if (k === "escape" || k === "e" || k === " ") this.closeScreen();
         return;
       }

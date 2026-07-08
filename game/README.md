@@ -39,6 +39,20 @@ survive, rising from the heaps. Hold the lane to Day 16 and you win a unique
 ending — **THE LANE HOLDS** — or leave with everyone at once when the lorries
 come (**THE LANE LEAVES TOGETHER**).
 
+Your four friends are **real characters**: they catch fevers (tend them
+yourself, or send them to the aunty sick-room — with no clinic, every call is
+a gamble), they can leave, and when something finally gets through the door,
+one of them may **throw themselves between you and it**. Sitting with them on
+the mat drains stress far faster than anything in America. **Chotu runs
+side-quests** between houses — feed the runner and he brings back rations,
+boards for your door, or the hand-printed **newspaper** that unlocks the news
+app. One day mid-outbreak the **monsoon** breaks: the lane floods, and
+everything sleeping in the heaps washes out and drowns. And everywhere, at any
+window, press `E` to put your face to the glass — a full **first-person view**
+of the street outside. Texting anyone, anywhere, gets **real answers**: every
+contact reads what you type (love, fear, questions, food, the walkers) and
+responds in character, warming up the more you talk to them.
+
 The terror is a slow descent:
 
 * The **news** opens on mild weather and cruise tourism, then breaks the story
