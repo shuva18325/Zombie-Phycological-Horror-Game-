@@ -19,10 +19,25 @@ own interior and its own view outside the glass: skyline, a street of
 neighbors' houses, or barn-and-windmill farmland — all of it deteriorating in
 its own way as the outbreak advances). Every run starts on a perfectly normal
 Day 1; your zone's *speed* decides how early the collapse reaches your street
-— Gray Zones fall days ahead of the news, Green fortresses never fully fall. In the Gray Zones there is no
-government left at all — militias reinforce your door, gangs collect tolls
-for the district wall, and helicopter strike waves burn the clusters a few
-blocks away.
+— Gray Zones fall days ahead of the news, Green fortresses never fully fall.
+In the Gray Zones there is no government left at all — militias reinforce
+your door, gangs collect tolls for the district wall, and helicopter strike
+waves burn the clusters a few blocks away.
+
+Or leave America entirely: the **SLUM DISTRICTS — OVERSEAS** (Mumbai–Dharavi,
+Dhaka–Korail, Manila–Tondo, Jakarta–Kampung) flip the whole formula. You share
+one room with **four friends** — Ravi, Sana, Arjun and Meera — so stress stays
+low, because nobody faces the night alone. The knocking never stops, and you
+know every face: aunties with tiffins, the community watch with boards, Chotu
+with the lane's news. There's barely any healthcare or internet — just a cheap
+**2G phone** (group chat, battery **FM radio**, the **BMC ward map** of Greater
+Mumbai with your ward marked ★ YOU) and a battered TV with its own reporter on
+BHARAT 24x7. The Indian government arc runs janata curfew → Section 144 → army
+cordon → the discovery: **the polluted water and air KILL the virus.** Dead
+infected float down the Mithi river; only the trash-adapted **kachra walkers**
+survive, rising from the heaps. Hold the lane to Day 16 and you win a unique
+ending — **THE LANE HOLDS** — or leave with everyone at once when the lorries
+come (**THE LANE LEAVES TOGETHER**).
 
 The terror is a slow descent:
 

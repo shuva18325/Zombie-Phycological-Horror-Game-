@@ -11,6 +11,7 @@
 
   const APP_TITLES = {
     messages: "MESSAGES",
+    radio: "FM 92.7 — GALLI RADIO",
     news: "NEWSPAPER",
     map: "NATIONAL MAP",
     virus: "VIRUS REPORT",
@@ -109,7 +110,13 @@
 
       if (game.orderIndex > 0) {
         this.el.order.classList.remove("hidden");
-        this.el.order.textContent = "⚠ " + ZH.Content.ORDERS[game.orderIndex];
+        const slumOrders = [
+          "", "CURFEW IN EFFECT — 9:00 PM", "JANATA CURFEW — SECTION 144",
+          "ARMY CORDON — NOBODY IN OR OUT", "ATTRITION ZONE — HOLD YOUR LANE",
+        ];
+        this.el.order.textContent = "⚠ " + (game.zoneId === "slum"
+          ? slumOrders[game.orderIndex]
+          : ZH.Content.ORDERS[game.orderIndex]);
       } else {
         this.el.order.classList.add("hidden");
       }
@@ -122,7 +129,7 @@
       this.el.barricade.innerHTML =
         "DOOR <b>" + bar(b.door) + "</b>&nbsp;&nbsp;WINDOWS <b>" + bar(b.window) +
         "</b>&nbsp;&nbsp;FOOD <b>" + "▮".repeat(Math.max(0, game.supplies)) +
-        "▯".repeat(Math.max(0, 6 - game.supplies)) + "</b>";
+        "▯".repeat(Math.max(0, 8 - game.supplies)) + "</b>";
     },
 
     showHUD() { this.el.hud.classList.remove("hidden"); },
@@ -175,7 +182,7 @@
     closeTV() { this.el.tv.classList.add("hidden"); },
 
     renderTV(game) {
-      const TL = ZH.Content.TV_TIMELINE;
+      const TL = game.timelineRef || ZH.Content.TV_TIMELINE;
       const idx = Math.max(0, Math.min(game.tvView, TL.length - 1));
       const item = TL[idx];
       const live = idx === game.tvStage;
@@ -208,7 +215,7 @@
     /** Called each frame by the engine while the TV is open. */
     tickTV(game, dt) {
       this.faceT += dt;
-      const TL = ZH.Content.TV_TIMELINE;
+      const TL = game.timelineRef || ZH.Content.TV_TIMELINE;
       const item = TL[Math.max(0, Math.min(game.tvView, TL.length - 1))];
       if (!item.special) this.drawReporter(game, item);
     },
@@ -223,22 +230,29 @@
       const ph = game.nationalPhase != null ? game.nationalPhase : game.phase;
       const grim = ph >= 3;
       const final_ = ph >= 4;
+      const slum = game.zoneId === "slum";
 
       ctx.imageSmoothingEnabled = false;
-      // studio backdrop
+      // studio backdrop (the slum channel runs hot reds and marigold)
       const bg = ctx.createLinearGradient(0, 0, 0, H);
-      bg.addColorStop(0, final_ ? "#2a1418" : "#1d3a52");
-      bg.addColorStop(1, final_ ? "#180a0c" : "#12253a");
+      if (slum) {
+        bg.addColorStop(0, final_ ? "#3a1210" : "#6e1512");
+        bg.addColorStop(1, final_ ? "#1d0a08" : "#3a0d0b");
+      } else {
+        bg.addColorStop(0, final_ ? "#2a1418" : "#1d3a52");
+        bg.addColorStop(1, final_ ? "#180a0c" : "#12253a");
+      }
       ctx.fillStyle = bg;
       ctx.fillRect(0, 0, W, H);
       // backdrop stripe + logo
-      ctx.fillStyle = final_ ? "rgba(200,60,50,0.25)" : "rgba(120,180,220,0.15)";
+      ctx.fillStyle = slum ? "rgba(232,212,77,0.30)"
+        : final_ ? "rgba(200,60,50,0.25)" : "rgba(120,180,220,0.15)";
       ctx.fillRect(0, 16, W, 10);
-      ctx.fillStyle = final_ ? "#c04038" : "#3a7ab0";
-      ctx.fillRect(4, 4, 24, 10);
-      ctx.fillStyle = "#fff";
+      ctx.fillStyle = slum ? "#e8a020" : final_ ? "#c04038" : "#3a7ab0";
+      ctx.fillRect(4, 4, slum ? 40 : 24, 10);
+      ctx.fillStyle = slum ? "#3a0d0b" : "#fff";
       ctx.font = "7px monospace";
-      ctx.fillText("NNC", 7, 12);
+      ctx.fillText(slum ? "BHARAT24x7" : "NNC", 7, 12);
 
       // news desk
       ctx.fillStyle = "#27313a";
@@ -269,8 +283,12 @@
       }
 
       // ---- head ----
-      const skin = final_ ? "#cbb39c" : grim ? "#d3ac88" : "#d9b08c";
-      const shade = final_ ? "#b39c86" : "#c09a78";
+      let skin = final_ ? "#cbb39c" : grim ? "#d3ac88" : "#d9b08c";
+      let shade = final_ ? "#b39c86" : "#c09a78";
+      if (slum) {
+        skin = final_ ? "#8a5c3e" : grim ? "#96633e" : "#a0683f";
+        shade = final_ ? "#74503a" : "#845636";
+      }
       // neck
       ctx.fillStyle = skin;
       ctx.fillRect(53, 74, 14, 12);
@@ -290,7 +308,7 @@
       ctx.fillRect(82, 50, 2, 5);
 
       // hair (side part; stray strands when grim)
-      ctx.fillStyle = "#3a2e24";
+      ctx.fillStyle = slum ? "#0f0c0a" : "#3a2e24";
       ctx.fillRect(38, 22, 44, 12);
       ctx.fillRect(36, 28, 8, 16);
       ctx.fillRect(78, 28, 6, 14);
@@ -348,6 +366,11 @@
       ctx.fillRect(58, 50, 4, 10);
       ctx.fillRect(56, 58, 8, 3);
 
+      // the anchor's mustache (slum channel)
+      if (slum) {
+        ctx.fillStyle = "#141008";
+        ctx.fillRect(51, 61, 18, 4);
+      }
       // mouth — talking animation
       const talking = !blink;
       const open = talking ? 2 + Math.abs(Math.sin(t * 7)) * 4 : 2;
@@ -373,20 +396,42 @@
         ctx.fillRect(79, sy, 2, 3);
       }
 
-      // scanline shimmer over the feed
+      // scanline shimmer over the feed (the cheap TV is much worse)
       ctx.fillStyle = "rgba(255,255,255,0.05)";
       ctx.fillRect(0, (t * 34) % H, W, 2);
       ctx.fillStyle = "rgba(0,0,0,0.12)";
       for (let y = 0; y < H; y += 3) ctx.fillRect(0, y, W, 1);
+      if (slum) {
+        ctx.fillStyle = "rgba(255,255,255,0.08)";
+        ctx.fillRect(0, (t * 61) % H, W, 1);
+        for (let i = 0; i < 14; i++) {
+          ctx.fillStyle = Math.random() < 0.5 ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.3)";
+          ctx.fillRect(Math.random() * W, Math.random() * H, 2, 1);
+        }
+      }
     },
 
     /* ================= COMPUTER HUB ================= */
     openComputer(game) {
+      const slum = game.zoneId === "slum";
+      const pc = this.el.computer.querySelector(".pc");
+      pc.classList.toggle("cheap", slum);
+      const user = this.el.computer.querySelector(".pc-user");
+      if (user) user.textContent = slum ? "◉ chotu-phone" : "◉ home-desktop";
+      // the cheap phone gets Messages, Radio, Map, Alerts — nothing else
+      const slumApps = ["messages", "radio", "map", "alerts"];
+      document.querySelectorAll(".tile").forEach((tile) => {
+        const app = tile.dataset.app;
+        const hidden = slum ? slumApps.indexOf(app) === -1 : app === "radio";
+        tile.classList.toggle("hidden", hidden);
+      });
       this.showPcHome();
       this.updateBadges(game);
       this.el.pcClock.textContent = "DAY " + game.day + " · " + game.clockString();
       const off = game.nationalPhase >= 4;
-      this.el.pcNet.textContent = off ? "● DEGRADED" : "● ONLINE";
+      this.el.pcNet.textContent = slum
+        ? (off ? "● NO SIGNAL" : "● 2G, BARELY")
+        : (off ? "● DEGRADED" : "● ONLINE");
       this.el.pcNet.classList.toggle("offline", off);
       this.el.computer.classList.remove("hidden");
     },
@@ -425,6 +470,7 @@
         case "virus": this.renderVirus(game); break;
         case "alerts": this.renderAlerts(game); break;
         case "social": this.renderSocial(game); break;
+        case "radio": this.renderRadio(game); break;
       }
       ZH.Audio.blip();
     },
@@ -433,7 +479,7 @@
     renderMessages(game) {
       const body = this.el.pcAppBody;
       body.innerHTML = "";
-      const contacts = ZH.Content.MESSAGES.filter((c) =>
+      const contacts = (game.contactsRef || ZH.Content.MESSAGES).filter((c) =>
         (game.threads[c.id] || []).length > 0);
       if (!contacts.length) {
         body.innerHTML = "<p>No messages yet. A quiet night — enjoy it while it lasts.</p>";
@@ -554,7 +600,13 @@
       body.appendChild(wrap);
       const note = document.createElement("div");
       note.className = "map-note";
-      const notes = [
+      const notes = game.zoneId === "slum" ? [
+        "All wards reporting normally.",
+        "Port wards under health watch.",
+        "Southern wards sealing. Stay in your lane.",
+        "The cordon is up. Your ward is marked HOLDING.",
+        "The water is winning. Hold, and the map stays blue where you are.",
+      ] : [
         "All regions reporting normally.",
         "Coastal counties under observation.",
         "Quarantine lines forming along the seaboard.",
@@ -580,6 +632,30 @@
           div.innerHTML = "<h3>" + r.title + "</h3><p>" + r.body + "</p>";
           body.appendChild(div);
         }
+      }
+    },
+
+    /* ---- FM radio: the battery set that outlives the grid ---- */
+    renderRadio(game) {
+      const body = this.el.pcAppBody;
+      const head = document.createElement("div");
+      head.className = "radio-head";
+      head.innerHTML = "📻 <b>GALLI RADIO — FM 92.7</b><br>" +
+        "<span class='radio-sub'>battery set · works even when the grid dies</span>";
+      body.appendChild(head);
+      const items = [];
+      for (let p = game.nationalPhase; p >= 0; p--) {
+        for (const r of (ZH.Content.SLUM_RADIO[p] || [])) items.push(r);
+      }
+      if (!items.length) {
+        body.innerHTML += "<p>Static, film songs, and the rooster. A normal morning.</p>";
+        return;
+      }
+      for (const r of items) {
+        const div = document.createElement("div");
+        div.className = "radio-entry";
+        div.innerHTML = "<span class='lvl'>[" + r.time + "]</span> " + r.text;
+        body.appendChild(div);
       }
     },
 

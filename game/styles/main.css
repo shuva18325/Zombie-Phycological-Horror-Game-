@@ -359,6 +359,39 @@ html, body {
 .t-purple { background: #5133ab; }
 .t-orange { background: #d24726; }
 .t-teal   { background: #008272; }
+.t-yellow { background: #b8860b; }
+
+/* the cheap phone in the lane: cracked plastic, teal glow, 2G */
+.pc.cheap {
+  background: linear-gradient(160deg, #0f3a40 0%, #092227 100%);
+  border-color: #04181c;
+  border-radius: 14px;
+  box-shadow: 0 0 50px rgba(0,0,0,0.85), 0 0 40px rgba(42,157,176,0.12) inset;
+}
+.pc.cheap .pc-top { background: rgba(0,0,0,0.4); color: #a8d4dc; }
+.pc.cheap .pc-home-label { color: #a8d4dc; }
+.pc.cheap .pc-app-head { background: rgba(0,0,0,0.4); }
+.pc.cheap::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+/* FM radio app */
+.radio-head {
+  color: #ffd98a;
+  font-size: clamp(10px, 1.6vw, 14px);
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+.radio-head .radio-sub { color: #8a93a2; font-size: 0.85em; letter-spacing: 0; }
+.radio-entry {
+  margin-bottom: 9px;
+  padding-left: 9px;
+  border-left: 3px solid #b8860b;
+  line-height: 1.5;
+}
+.radio-entry .lvl { color: #ffd98a; font-weight: bold; }
 
 .pc-app { flex: 1; display: flex; flex-direction: column; min-height: 0; }
 .pc-app-head {

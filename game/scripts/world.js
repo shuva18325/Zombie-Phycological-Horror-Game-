@@ -46,6 +46,11 @@
       knockMul: 0.55, horrorMul: 0.5, breachMul: 2.2,
       desc: "Ground zero regions. Days ahead of the country: government gone early, militias and gangs holding the blocks.",
     },
+    slum: {
+      label: "SLUM DISTRICT — OVERSEAS", color: "#2a9db0", speed: 1.5,
+      knockMul: 0.4, horrorMul: 0.75, breachMul: 1.7,
+      desc: "A dense lane where you know every face. Barely any healthcare or internet — but you live with four friends, the knocking never stops, and nobody faces the night alone.",
+    },
   };
 
   /* Zone tier follows the national situation map.
@@ -111,6 +116,35 @@
     { id: "OR", name: "Oregon", zone: "gray", m: [3, 11, 10, 8] },
     { id: "NV", name: "Nevada", zone: "gray", m: [11, 20, 8, 12] },
     { id: "LI", name: "Long Island — Cut Off", zone: "gray", m: null },
+    // ---- SLUM DISTRICTS — OVERSEAS ----
+    { id: "MUM", name: "Mumbai — Dharavi (India)", zone: "slum", m: null },
+    { id: "DHK", name: "Dhaka — Korail (Bangladesh)", zone: "slum", m: null },
+    { id: "MNL", name: "Manila — Tondo (Philippines)", zone: "slum", m: null },
+    { id: "JKT", name: "Jakarta — Kampung (Indonesia)", zone: "slum", m: null },
+  ];
+
+  /* Greater Mumbai ward sections for the slum region's own map
+     (an elongated peninsula, south tip to northern suburbs).
+     s: [x, y, w, h] on a 60×100 space · fall: national phase when
+     the ward is overrun. Dharavi never falls — the environment
+     itself kills the virus there. */
+  const MUMBAI_WARDS = [
+    { id: "Colaba",   s: [25, 88, 7, 9],   fall: 1 },
+    { id: "Fort",     s: [24, 80, 9, 7],   fall: 1 },
+    { id: "Marine",   s: [21, 72, 8, 7],   fall: 2 },
+    { id: "Byculla",  s: [30, 72, 8, 7],   fall: 1 },
+    { id: "Worli",    s: [19, 62, 8, 9],   fall: 2 },
+    { id: "Parel",    s: [28, 62, 10, 9],  fall: 2 },
+    { id: "Bandra",   s: [17, 50, 9, 11],  fall: 3 },
+    { id: "DHARAVI",  s: [27, 50, 11, 11], fall: 99, you: true },
+    { id: "Kurla",    s: [39, 52, 8, 9],   fall: 2 },
+    { id: "Andheri",  s: [15, 37, 10, 12], fall: 3 },
+    { id: "Powai",    s: [27, 37, 11, 12], fall: 3 },
+    { id: "Ghatkpr",  s: [39, 39, 9, 11],  fall: 3 },
+    { id: "Malad",    s: [13, 23, 11, 13], fall: 4 },
+    { id: "Mulund",   s: [33, 23, 11, 13], fall: 4 },
+    { id: "Borivali", s: [11, 9, 11, 13],  fall: 4 },
+    { id: "Thane",    s: [31, 9, 11, 13],  fall: 4 },
   ];
 
   const AREAS = {
@@ -160,7 +194,7 @@
 
     /** Populate + wire the menu location picker. */
     initPicker(stateSel, areaSel, chipEl, descEl) {
-      const order = ["green", "yellow", "orange", "red", "darkred", "gray"];
+      const order = ["green", "yellow", "orange", "red", "darkred", "gray", "slum"];
       for (const z of order) {
         const og = document.createElement("optgroup");
         og.label = ZONES[z].label;
@@ -194,6 +228,7 @@
        containment wall appear late. Any canvas size works.
        ------------------------------------------------------------ */
     drawMap(ctx, W, H, game) {
+      if (game && game.zoneId === "slum") { this.drawSlumMap(ctx, W, H, game); return; }
       const phase = Math.max(0, Math.min(4,
         (game && typeof game.nationalPhase === "number") ? game.nationalPhase : 0));
       const day = game && game.day ? game.day : 1;
@@ -328,6 +363,135 @@
           ctx.beginPath(); ctx.arc(lx + 3, ly + 3, 3, 0, Math.PI * 2); ctx.fill();
           ctx.fillStyle = "#8a93a2";
           ctx.fillText("SAFE-GUARDED CITY", lx + 9, ly);
+        }
+      }
+      ctx.restore();
+    },
+    /* ------------------------------------------------------------
+       drawSlumMap — the slum region's own map: Greater Mumbai as a
+       tall peninsula of ward blocks over the sea. Wards fall one by
+       one as the phases advance; YOUR ward holds, because the water
+       and the air here kill the virus faster than it can spread.
+       ------------------------------------------------------------ */
+    drawSlumMap(ctx, W, H, game) {
+      const phase = Math.max(0, Math.min(4,
+        (game && typeof game.nationalPhase === "number") ? game.nationalPhase : 0));
+      const day = game && game.day ? game.day : 1;
+
+      ctx.save();
+      ctx.imageSmoothingEnabled = false;
+
+      // the Arabian Sea
+      const oc = ctx.createLinearGradient(0, 0, 0, H);
+      oc.addColorStop(0, "#0c1a23");
+      oc.addColorStop(1, "#0a141a");
+      ctx.fillStyle = oc;
+      ctx.fillRect(0, 0, W, H);
+
+      const small = W < 200;
+      const headH = small ? 9 : 24;
+      const legendH = small ? 0 : 20;
+      const sx = W / 60;
+      const sy = (H - headH - legendH) / 100;
+      const S = Math.min(sx, sy);
+      const ox = (W - S * 60) / 2;
+      const oy = headH;
+
+      // wave texture
+      if (!small) {
+        ctx.strokeStyle = "rgba(90,140,170,0.08)";
+        for (let i = 1; i < 8; i++) {
+          ctx.beginPath();
+          ctx.moveTo(0, oy + i * 12 * S);
+          ctx.lineTo(W, oy + i * 12 * S);
+          ctx.stroke();
+        }
+      }
+
+      // title
+      ctx.fillStyle = phase >= 3 ? "#ff6f63" : "#7fd08c";
+      ctx.font = (small ? 6 : 11) + "px monospace";
+      ctx.textBaseline = "top";
+      const titles = [
+        "BMC WARD MAP — GREATER MUMBAI",
+        "BMC HEALTH WATCH — PORT ALERT",
+        "OUTBREAK MAP — WARDS SEALING",
+        "CORDON MAP — DAY " + day,
+        "ATTRITION MAP — THE WATER FIGHTS BACK",
+      ];
+      ctx.fillText(titles[phase], Math.max(4, ox), small ? 1 : 5);
+
+      const wardColor = (wd) => {
+        if (wd.you) return "#2a9db0";                        // your lane holds
+        if (phase > wd.fall) return phase >= 4 ? "#4a0f12" : "#8a1a1e";
+        if (phase === wd.fall) return "#c05038";
+        if (phase === wd.fall - 1 && phase > 0) return "#e0c23c";
+        return "#3f7a5a";
+      };
+
+      for (const wd of MUMBAI_WARDS) {
+        const [x0, y0, w0, h0] = wd.s;
+        const x = ox + x0 * S, y = oy + y0 * S, w = w0 * S, h = h0 * S;
+        ctx.fillStyle = wardColor(wd);
+        ctx.fillRect(x, y, w, h);
+        ctx.strokeStyle = "rgba(6,10,16,0.8)";
+        ctx.lineWidth = Math.max(1, S * 0.3);
+        ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+
+        // the army cordon around your ward
+        if (wd.you && phase >= 3) {
+          ctx.strokeStyle = "#e8d44d";
+          ctx.lineWidth = Math.max(1, S * 0.5);
+          ctx.setLineDash([S * 1.2, S * 0.8]);
+          ctx.strokeRect(x - 2, y - 2, w + 4, h + 4);
+          ctx.setLineDash([]);
+        }
+        if (!small && w > 26) {
+          ctx.fillStyle = "rgba(0,0,0,0.55)";
+          ctx.font = Math.max(6, Math.floor(S * 1.6)) + "px monospace";
+          ctx.fillText(wd.id, x + 2, y + 2);
+        }
+        if (wd.you && !small) {
+          ctx.fillStyle = "#eafbe9";
+          ctx.font = "bold " + Math.max(7, Math.floor(S * 1.8)) + "px monospace";
+          ctx.fillText("★ YOU", x + 2, y + h - S * 2.2);
+        }
+      }
+
+      // the Mithi river — where the floaters drift
+      if (phase >= 3) {
+        ctx.strokeStyle = "#3a5a4a";
+        ctx.lineWidth = Math.max(2, S * 0.7);
+        ctx.beginPath();
+        ctx.moveTo(ox + 44 * S, oy + 48 * S);
+        ctx.lineTo(ox + 34 * S, oy + 54 * S);
+        ctx.lineTo(ox + 24 * S, oy + 56 * S);
+        ctx.stroke();
+        if (!small) {
+          ctx.fillStyle = "#6a8a7a";
+          ctx.font = "6px monospace";
+          ctx.fillText("MITHI R.", ox + 40 * S, oy + 46 * S);
+        }
+      }
+
+      // legend
+      if (!small) {
+        const items = [
+          ["#3f7a5a", "CLEAR"],
+          ["#e0c23c", "CASES"],
+          ["#c05038", "SEALED"],
+          ["#8a1a1e", "OVERRUN"],
+          ["#2a9db0", "HOLDING (YOU)"],
+        ];
+        let lx = Math.max(6, ox - 30);
+        const ly = H - legendH + 5;
+        ctx.font = "7px monospace";
+        for (const [col, lab] of items) {
+          ctx.fillStyle = col;
+          ctx.fillRect(lx, ly, 7, 7);
+          ctx.fillStyle = "#8a93a2";
+          ctx.fillText(lab, lx + 9, ly);
+          lx += 9 + ctx.measureText(lab).width + 8;
         }
       }
       ctx.restore();

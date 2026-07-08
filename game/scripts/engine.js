@@ -64,9 +64,9 @@
   }
 
   // Per-phase broadcast hold times so the timeline spans its real days.
-  function computeTvHolds() {
+  function computeTvHolds(timeline) {
     const counts = [0, 0, 0, 0, 0];
-    for (const s of ZH.Content.TV_TIMELINE) counts[s.phase]++;
+    for (const s of timeline) counts[s.phase]++;
     const windows = [];
     for (let p = 0; p < 5; p++) {
       const start = PHASE_START_DAY[p];
@@ -82,6 +82,7 @@
     raf: 0,
     last: 0,
     tvHolds: [60, 60, 60, 60, 12],
+    tvHoldsSlum: [60, 60, 60, 60, 12],
 
     /* ------------------------------------------------------------ */
     init() {
@@ -94,7 +95,8 @@
         document.getElementById("area-select"),
         document.getElementById("zone-chip"),
         document.getElementById("zone-desc"));
-      this.tvHolds = computeTvHolds();
+      this.tvHolds = computeTvHolds(ZH.Content.TV_TIMELINE);
+      this.tvHoldsSlum = computeTvHolds(ZH.Content.SLUM_TV_TIMELINE);
 
       this.wireDom();
       ZH.Renderer.load(() => {
@@ -148,7 +150,9 @@
         computerAlerts: [],
         threads: {},
         threadUnread: {},
-        unread: { messages: 0, news: 0, map: 0, virus: 0, alerts: 0, social: 0 },
+        unread: { messages: 0, news: 0, map: 0, virus: 0, alerts: 0, social: 0, radio: 0 },
+        timelineRef: state.zone === "slum" ? ZH.Content.SLUM_TV_TIMELINE : ZH.Content.TV_TIMELINE,
+        contactsRef: state.zone === "slum" ? ZH.Content.SLUM_MESSAGES : ZH.Content.MESSAGES,
         supplies: MAX_FOOD,
         ateToday: false,
         hungerStreak: 0,
@@ -221,11 +225,13 @@
        ------------------------------------------------------------ */
     unlockPhaseContent(step) {
       const g = this.game;
-      (ZH.Content.GOV_ALERTS[step] || []).forEach((a) => {
+      const slum = g.zoneId === "slum";
+      const alertsSrc = slum ? ZH.Content.SLUM_ALERTS : ZH.Content.GOV_ALERTS;
+      (alertsSrc[step] || []).forEach((a) => {
         g.computerAlerts.push(a);
         g.unread.alerts++;
       });
-      for (const c of ZH.Content.MESSAGES) {
+      for (const c of g.contactsRef) {
         for (const m of c.thread) {
           if (m.phase === step) {
             if (!g.threads[c.id]) g.threads[c.id] = [];
@@ -235,9 +241,13 @@
           }
         }
       }
-      g.unread.news += (ZH.Content.NEWSPAPERS[step] || []).length;
-      g.unread.virus += (ZH.Content.VIRUS_REPORTS[step] || []).length;
-      g.unread.social += ZH.Content.SOCIAL.filter((p) => p.phase === step).length;
+      if (slum) {
+        g.unread.radio += (ZH.Content.SLUM_RADIO[step] || []).length;
+      } else {
+        g.unread.news += (ZH.Content.NEWSPAPERS[step] || []).length;
+        g.unread.virus += (ZH.Content.VIRUS_REPORTS[step] || []).length;
+        g.unread.social += ZH.Content.SOCIAL.filter((p) => p.phase === step).length;
+      }
       if (step > 0) g.unread.map++;
     },
 
@@ -248,7 +258,9 @@
         this.unlockPhaseContent(g.nationalPhase);
       }
       if (!quiet && n > 0) {
-        g.toast("💻 Your computer chimes — new messages, headlines and alerts.");
+        g.toast(g.zoneId === "slum"
+          ? "📱 The phone buzzes and the radio crackles — the lane has news."
+          : "💻 Your computer chimes — new messages, headlines and alerts.");
       }
       this.recomputeLocalPhase(quiet);
     },
@@ -402,7 +414,7 @@
         const np = phaseForDay(Math.floor(g.timeElapsed / DAY_LENGTH) + 1);
         if (np > g.nationalPhase) this.setNationalPhase(np, true);
         for (let i = 0; i < 40; i++) {
-          if (g.tvStage >= ZH.Content.TV_TIMELINE.length - 1) break;
+          if (g.tvStage >= g.timelineRef.length - 1) break;
           if (g.timeElapsed < g.nextTvAt) break;
           this.updateTV(0);
         }
@@ -480,13 +492,13 @@
        ------------------------------------------------------------ */
     sendMessage(contactId, text) {
       const g = this.game;
-      const contact = ZH.Content.MESSAGES.find((c) => c.id === contactId);
+      const contact = g.contactsRef.find((c) => c.id === contactId);
       if (!contact || !g.threads[contactId]) return;
       g.threads[contactId].push({ who: "me", text });
       ZH.UI.refreshMessagesIfOpen(g);
       g.player.addStress(-2);
 
-      const dead = g.nationalPhase >= 4 && contactId !== "mom";
+      const dead = g.nationalPhase >= 4 && g.zoneId !== "slum" && contactId !== "mom";
       setTimeout(() => {
         if (g !== this.game) return;
         if (dead) {
@@ -514,7 +526,9 @@
       if (g.day >= RESCUE_DAY && g.phase >= 3) {
         g.rescueKnocks++;
         if (g.rescueKnocks % 2 === 1) {
-          visitor = g.zoneId === "gray" ? ZH.Events._militiaEscort() : ZH.Events._evac();
+          visitor = g.zoneId === "slum" ? ZH.Events._exodus()
+            : g.zoneId === "gray" ? ZH.Events._militiaEscort()
+            : ZH.Events._evac();
         }
       }
       g.knockPending = visitor || ZH.Events.makeVisitor(g);
@@ -693,9 +707,18 @@
 
       if (g.day > g.dayShown) { this.dayTransition(); return; }
 
+      // the slum's unique victory: the environment kills the virus.
+      // Hold the lane long enough and you simply... outlive it.
+      if (g.zoneId === "slum" && g.day >= 16) { this.triggerEnding("holdfast"); return; }
+
       this.updateTV(dt);
 
       if (p.stress >= 100) { this.triggerEnding("panic"); return; }
+
+      // four friends in the room: stress never climbs the way it does alone
+      if (g.zoneId === "slum" && p.stress > 0) {
+        p.addStress(-dt * (g.phase >= 4 ? 0.35 : 0.6));
+      }
 
       this.updateProximity();
       this.updateHorror(dt);
@@ -721,7 +744,8 @@
         case "computer": {
           const n = g.unread.messages + g.unread.news + g.unread.alerts +
                     g.unread.social + g.unread.virus + g.unread.map;
-          txt = "<b>[E]</b> Use the computer" + (n ? " — <b>" + n + "</b> new" : "");
+          txt = "<b>[E]</b> Use the " + (g.zoneId === "slum" ? "phone" : "computer") +
+                (n ? " — <b>" + n + "</b> new" : "");
           break;
         }
         case "window":
@@ -744,7 +768,7 @@
     // a segment never airs before its phase's day arrives.
     updateTV(dt) {
       const g = this.game;
-      const TL = ZH.Content.TV_TIMELINE;
+      const TL = g.timelineRef;
       if (g.tvStage >= TL.length - 1) return;
       if (g.timeElapsed < g.nextTvAt) return;
       const next = TL[g.tvStage + 1];
@@ -754,7 +778,8 @@
       }
       const wasLive = g.tvView === g.tvStage;
       g.tvStage++;
-      g.nextTvAt = g.timeElapsed + this.tvHolds[next.phase] * (0.85 + Math.random() * 0.3);
+      const holds = g.zoneId === "slum" ? this.tvHoldsSlum : this.tvHolds;
+      g.nextTvAt = g.timeElapsed + holds[next.phase] * (0.85 + Math.random() * 0.3);
       if (typeof next.on === "function") { try { next.on(g); } catch (e) {} }
       if (wasLive) g.tvView = g.tvStage;
       if (g.modal === "tv") ZH.UI.renderTV(g);

@@ -406,6 +406,155 @@
   ];
 
   /* ------------------------------------------------------------
+     SLUM DISTRICT CONTENT — Mumbai/Dharavi and sister districts.
+     A cheap TV with its own reporter, a battery FM radio, a group
+     chat where you know everyone — and the lore: the water is so
+     polluted and the air so dirty that ordinary infected DIE out
+     here. They float down the Mithi. Only the trash-adapted
+     ("kachra walkers") survive. The government cordons the wards…
+     and then discovers the slum is winning.
+     ------------------------------------------------------------ */
+  const SLUM_TV_TIMELINE = [
+    // ---- phase 0 ----
+    { id: "M1", phase: 0, channel: "BHARAT 24x7 · MORNING",
+      headline: "Monsoon Eases; Local Trains Back On Schedule",
+      body: "Good morning, Mumbai. The rains have eased, the Central Line is running on time for once, and onion prices are down. A calm week ahead, God willing.",
+      ticker: "Trains on time · Onion prices dip · Air quality: poor (as usual)" },
+    { id: "M2", phase: 0, channel: "BHARAT 24x7 · WORLD",
+      headline: "Foreign Cruise Ship Quarantined Over Mystery Illness",
+      body: "In world news: a cruise liner in the Atlantic reports a strange illness — fever, confusion, dehydration. Health Ministry officials say there is no cause for concern in India. Screening continues at all ports.",
+      ticker: "Cruise illness overseas · 'No cases in India' · Port screening routine" },
+    // ---- phase 1 ----
+    { id: "M3", phase: 1, channel: "BHARAT 24x7 · BREAKING",
+      headline: "First Peclip Cases Confirmed at Mumbai Port",
+      body: "Breaking: three dock workers at Mumbai Port Trust have tested positive for the Peclip Virus. The Health Ministry has issued an advisory: masks, distance, report fever immediately. Thermal screening begins at all stations and airports.",
+      ticker: "3 cases at the port · Ministry advisory issued · Thermal screening at stations" },
+    { id: "M4", phase: 1, channel: "BHARAT 24x7 · HEALTH",
+      headline: "Hospitals on Alert; Wards Prepare Isolation Beds",
+      body: "Civic hospitals are converting wards to isolation units. Doctors describe patients who grow violent and confused within a day. The BMC urges citizens: do not crowd the hospitals, do not touch the sick, wash your hands.",
+      ticker: "Isolation wards ready · 'Violent confusion' in patients · BMC: do not crowd hospitals" },
+    { id: "M5", phase: 1, channel: "BHARAT 24x7 · CITY",
+      headline: "City on Edge as Cases Spread Along the Harbour Line",
+      body: "Cases are following the railway lines north. Colaba and Fort report incidents. The Chief Minister appeals for calm and announces a task force. In the lanes, the aunties have already started their own count.",
+      ticker: "Cases along Harbour Line · CM appeals for calm · Task force announced" },
+    // ---- phase 2 ----
+    { id: "M6", phase: 2, channel: "BHARAT 24x7 · EMERGENCY",
+      headline: "JANATA CURFEW: Trains Stopped, City Locked Down",
+      body: "The government has declared a full janata curfew. Local trains — the city's lifeline — have stopped. Section 144 is in force across Greater Mumbai. Stay in your homes. Stay in your lanes. Police will patrol with loudspeakers.",
+      ticker: "JANATA CURFEW · Locals stopped · Section 144 citywide · Stay in your lanes" },
+    { id: "M7", phase: 2, channel: "BHARAT 24x7 · BMC",
+      headline: "Southern Wards SEALED as Infection Spreads",
+      body: "The BMC has sealed Colaba, Fort and Byculla behind barricades. Ration shops get police guards. Water tankers are being escorted. Officials say the sealing will hold. The lanes know better than to wait for officials.",
+      ticker: "South wards sealed · Ration shops guarded · Tankers under escort" },
+    { id: "M8", phase: 2, channel: "BHARAT 24x7 · DEFENCE",
+      headline: "Army Conducts Flag Marches Through the City",
+      body: "Army columns are marching through the main roads — a show of control as the police thin out. Helicopters sweep the coastline. The Chief Minister's address tonight was cut short by technical difficulties. Nobody believes that.",
+      ticker: "Army flag marches · Helicopters on the coast · CM address cut short" },
+    // ---- phase 3 ----
+    { id: "M9", phase: 3, channel: "BHARAT 24x7 · CORDON",
+      headline: "Army Cordons the Dense Districts — Including Yours",
+      body: "The army has thrown a cordon around the dense districts: Dharavi, and lanes like it. Nobody in, nobody out. Rations over the wire twice a week. Inside, the community watch organizes rotas: who guards, who cooks, who listens to the radio.",
+      ticker: "CORDON around the district · Nobody in or out · Rations over the wire",
+      on(g) { g.flags.soldiersOutside = true; setTimeout(() => { g.flags.soldiersOutside = false; }, 16000); } },
+    { id: "M10", phase: 3, channel: "BHARAT 24x7 · MITHI",
+      headline: "Bodies of Infected Found FLOATING in the Mithi River",
+      body: "Disturbing and strange: dozens of infected have been found dead — not destroyed, just dead — floating down the Mithi river. Doctors are baffled. The infected walked into the water… and simply stopped. More float past every hour.",
+      ticker: "Infected found DEAD in the Mithi · 'They just… stopped' · More every hour",
+      on(g) { g.toast("You can see them from the window now. Pale shapes, drifting with the current."); g.player.addStress(6); } },
+    { id: "M11", phase: 3, channel: "BHARAT 24x7 · SCIENCE",
+      headline: "Doctors: The Pollution Is KILLING the Virus",
+      body: "KEM Hospital researchers confirm the impossible: the Peclip Virus cannot survive our water or our air. The contamination that has poisoned these lanes for generations is burning the infection out of every host it touches. The city's curse has become its shield.",
+      ticker: "POLLUTION KILLS THE VIRUS · Hosts dying within hours · 'Our curse is our shield'",
+      on(g) { g.player.addStress(-6); g.toast("The lane erupts — people banging pots, laughing, crying. The filth is fighting for you."); } },
+    { id: "M12", phase: 3, channel: "BHARAT 24x7 · RELIEF",
+      headline: "Helicopters Drop Rations Inside the Cordons",
+      body: "Army helicopters are dropping ration crates into the cordoned districts. The government requests: hold your lanes, boil your water, and report any infected that still walk — especially those seen climbing from the garbage.",
+      ticker: "Ration drops begin · Boil your water · Report the ones from the garbage",
+      on(g) { g.flags.helicopter = true; g.audio.helicopterPass(); } },
+    // ---- phase 4 ----
+    { id: "M13", phase: 4, channel: "BHARAT 24x7 · ICMR",
+      headline: "ICMR CONFIRMS: Only the 'Kachra Walkers' Survive",
+      body: "The ICMR has confirmed what the lanes already knew. Ordinary infected die within hours here. But some — the ones that burrow into the garbage heaps, wrapped in refuse — have adapted. The trash shields them like a second skin. They are slower. They are patient. They are the only ones left.",
+      ticker: "KACHRA WALKERS confirmed · The trash shields them · Slow, patient, still hungry",
+      on(g) { g.player.addStress(7); g.toast("The heap across the lane shifted just now. Probably the wind. Probably."); } },
+    { id: "M14", phase: 4, channel: "BHARAT 24x7 · DIRECTIVE",
+      headline: "Dense Districts Declared 'Attrition Zones' — HOLD",
+      body: "The government's final directive for the cordoned districts: HOLD. Do not break the cordon. Every day you hold, the environment kills more of them. Estimates say the virus will burn itself out of the city within days. The lanes that hold together, survive together.",
+      ticker: "ATTRITION ZONE · HOLD YOUR LANE · The virus is burning out · Days, not weeks" },
+    { id: "M15", phase: 4, channel: "BHARAT 24x7 · SIGN-OFF",
+      headline: "This Studio Is Going Dark. The Radio Will Carry On.",
+      body: "We are handing over to the community radio network. To every lane still holding: you were never the weak point of this city. You were its immune system. Hold. [the anchor presses her palms together] Jai Hind.",
+      ticker: "TV signing off · FM 92.7 takes over · 'You were the immune system' · Jai Hind" },
+    { id: "M16", phase: 4, channel: "· · · SIGNAL · · ·", special: "static",
+      headline: "▓▓ NO SIGNAL ▓▓",
+      body: "Static. Somewhere under it, faintly, the community radio is still talking. The TV is done. The lane is not.",
+      ticker: "· · · FM 92.7 still broadcasting · · ·" },
+  ];
+
+  // The battery radio — keeps working when everything else dies.
+  const SLUM_RADIO = [
+    [{ time: "FM 92.7", text: "Namaste, this is Galli Radio. Nothing to report except Sharma-ji's rooster, which has again defeated everyone's sleep. Boil your water anyway. It's good practice." }],
+    [{ time: "FM 92.7", text: "Port cases confirmed. Listen: masks when you go to the tap, no crowding at Ganesh's shop, and if anyone has fever — the AUNTIES will know before the BMC does. Report to them." }],
+    [{ time: "FM 92.7", text: "Curfew is real, trains are stopped. Rota is posted at the temple wall: watch shifts, cooking shifts, water shifts. Nobody stands alone. Nobody sleeps alone. That is how the lane works." },
+     { time: "FM 92.7", text: "Police loudspeakers say stay inside. Fine. But keep the back paths clear between houses — aunty network says the sealed wards are already using them." }],
+    [{ time: "FM 92.7", text: "You've seen the river. They walk in and they stop. Whatever is in our water — and brothers, we always knew SOMETHING was in our water — it kills them. The floaters are proof the lane can outlive this." },
+     { time: "FM 92.7", text: "KEM doctors on the wire: the air, the water, the filth — the virus can't take it. Hosts drop in hours. Only warning: stay away from the HEAPS. The ones wrapped in kachra are lasting longer." }],
+    [{ time: "FM 92.7", text: "Final word from the government: HOLD. Every day we hold, the environment kills more of them. Kachra walkers are slow — bang your pots if you see a heap move, and the watch will come running." },
+     { time: "FM 92.7", text: "TV's gone dark. It's just us now. Chai at the corner at dawn for whoever's on watch. The lane holds together, the lane survives together. Galli Radio, staying on air." }],
+  ];
+
+  // Threads on the cheap phone — you know everyone.
+  const SLUM_MESSAGES = [
+    { id: "galli", from: "Galli Group 👥", color: "#2a9db0",
+      reply: "Ravi: we're all here yaar. nobody sleeps alone tonight 💪 Sana: chai's on. Meera: 🙏",
+      thread: [
+        { phase: 0, text: "Arjun: who left slippers on MY step 😂 · Sana: cricket at 6, losers buy vada pav" },
+        { phase: 1, text: "Meera: aunty network says 3 cases at the port. REAL ones. masks from tomorrow, no arguments" },
+        { phase: 2, text: "Ravi: trains stopped. rota posted at temple wall. our house takes night watch tuesday · Sana: my cousin's ward got SEALED" },
+        { phase: 3, text: "Arjun: DID YOU SEE THE RIVER. they just DIE here. Meera: the water fights for us 🙏 Ravi: stay off the heaps though. seriously." },
+        { phase: 4, text: "Sana: kachra walker pulled out of heap near pipe road, watch got it with rods. everyone fine. BANG YOUR POTS if you see one · Ravi: hold the lane 💪" },
+      ] },
+    { id: "amma", from: "Amma (village)", color: "#c0894a",
+      reply: "Eat properly. Boil the water twice. The whole village is praying for your lane. 💛",
+      thread: [
+        { phase: 0, text: "Did you eat? Send money only if you can. The buffalo is sick again." },
+        { phase: 1, text: "The TV says sickness in your city. Wear the mask I stitched you. ANSWER YOUR PHONE." },
+        { phase: 2, text: "They stopped the trains?? Beta come home. Walk if you must. Everyone is coming home." },
+        { phase: 3, text: "The village heard about the river. God is in your dirty water, beta. Stay with your friends." },
+        { phase: 4, text: "Hold on. The radio says your lanes are winning. I always said the city couldn't kill you. Neither can this." },
+      ] },
+    { id: "bhaiya", from: "Landlord Bhaiya", color: "#7a7a7a",
+      reply: "Rent can wait. Roof can't. I'm sending boys with boards — my building, my people.",
+      thread: [
+        { phase: 1, text: "Rent by Friday. Also tell Ravi the tap on 2nd lane is MINE to fix, not his." },
+        { phase: 2, text: "Forget Friday. Water drums on every floor by tonight. My boys are filling them. Don't fight over it." },
+        { phase: 3, text: "Cordon is at the main road. Back paths still open between my buildings. Only for the watch. You didn't hear this from me." },
+        { phase: 4, text: "40 years I collected rent in this lane. Nobody dies in my buildings this week. Boards, rods, and my boys are on the roof. HOLD." },
+      ] },
+  ];
+
+  // Government SMS blasts — Indian response arc.
+  const SLUM_ALERTS = [
+    [{ level: "ADVISORY", text: "MoHFW: Foreign cruise illness under observation. No cases in India. Routine port screening in effect. Do not spread rumours. #IndiaFightsPeclip" }],
+    [
+      { level: "WARNING", text: "MoHFW ALERT: Peclip cases confirmed at Mumbai Port. Wear masks. Report fever to 104. Thermal screening at all stations. Do not touch the sick." },
+      { level: "WARNING", text: "BMC: Isolation wards activated at KEM, Sion, JJ hospitals. Do not crowd hospital gates. Ambulances only." },
+    ],
+    [
+      { level: "CRITICAL", text: "GOVT OF MAHARASHTRA: JANATA CURFEW in force. Section 144 citywide. Local trains suspended. Stay in your homes. Police patrols with loudspeakers." },
+      { level: "CRITICAL", text: "BMC: Southern wards SEALED. Ration shops under guard. Water tankers escorted. Boil all drinking water." },
+    ],
+    [
+      { level: "CRITICAL", text: "ARMY SOUTHERN COMMAND: Cordon established around dense districts incl. Dharavi. No movement in or out. Ration drops twice weekly. Cooperate with community watch." },
+      { level: "CRITICAL", text: "ICMR BULLETIN: Infected hosts expiring on contact with contaminated water/air. If confirmed, this changes everything. Continue to HOLD." },
+    ],
+    [
+      { level: "CRITICAL", text: "ICMR CONFIRMED: Environment lethal to the virus. Surviving infected are refuse-adapted ('kachra walkers') — slow, resilient. Avoid all garbage heaps. Bang metal to alert the watch." },
+      { level: "CRITICAL", text: "FINAL DIRECTIVE: Dense districts are ATTRITION ZONES. Hold your lanes. Estimated burnout: days. The lanes that hold together survive together. Jai Hind." },
+    ],
+  ];
+
+  /* ------------------------------------------------------------
      ENDINGS
      ------------------------------------------------------------ */
   const ENDINGS = {
@@ -424,6 +573,14 @@
     infected: {
       mood: "bad", title: "TURNED",
       text: "It only took one bite. The Peclip fever comes fast — first the cold, then the heat, then the decay you can feel spreading while you stay horribly, completely awake. Your last clear thought is of how normal the evening had started. Then the thought, like the rest of you, begins to rot.",
+    },
+    exodus: {
+      mood: "good", title: "THE LANE LEAVES TOGETHER",
+      text: "At dawn the lorries come — arranged by the aunties, guarded by the watch, blessed at the temple wall. The whole lane climbs aboard together: Ravi, Sana, Arjun, Meera, the landlord's boys, Sharma-ji's rooster. You never once faced the night alone, and you don't leave alone either. The convoy rolls north, and the lane sings.",
+    },
+    holdfast: {
+      mood: "good", title: "THE LANE HOLDS",
+      text: "It ends the way the radio said it would: not with rescue, but with attrition. The floaters stopped coming days ago. The last kachra walker was pulled from the heap by the watch on Tuesday. The virus needed clean lungs and clean water, and your lane never had either to offer. The city's curse was its shield — and you held. Chai at the corner at dawn. Everyone's there.",
     },
     compound: {
       mood: "good", title: "THE COMPOUND",
@@ -450,6 +607,16 @@
     makeVisitor(game) {
       const phase = game.phase;
       const roll = Math.random();
+
+      // Slum districts: you know everyone. The knocking never stops,
+      // and almost all of it is your own people — until the heaps move.
+      if (game.zoneId === "slum") {
+        if (phase >= 2 && roll < 0.14) return this._trashZombie();
+        if (phase >= 1 && roll < 0.3) return this._sickNeighbor();
+        if (roll < 0.55) return this._aunty();
+        if (roll < 0.75) return this._laneKid();
+        return this._communityWatch();
+      }
 
       // Gray zones have no government: militias, gangs and the infected
       // own the street. Nobody official ever knocks.
@@ -573,6 +740,73 @@
       return this._wrap(v, "soldier");
     },
 
+    /* ---- slum lane visitors: you know every one of these faces ---- */
+    _aunty() {
+      const v = {
+        sprite: "person", color: "#c05a8a",
+        title: "PUSHPA AUNTY FROM TWO DOORS DOWN",
+        desc: "It's Pushpa Aunty, holding a steel tiffin stacked three layers high. 'Beta, you five eat like sparrows. Open up — and tell Ravi the rota has him on water duty, he can't hide from me.'",
+        yes: { stress: -7, supplies: +2, message: "Dal, rice, and her famous bhindi. She counts all five of you with her eyes, nods once, and moves to the next door. The lane feeds its own." },
+        no: { stress: +4, message: "You call an excuse through the door. A long pause. 'Hm.' The single most terrifying syllable in the lane. She leaves the tiffin on the step." },
+      };
+      return this._wrap(v, "person");
+    },
+
+    _laneKid() {
+      const v = {
+        sprite: "person", color: "#3a9ac0",
+        title: "CHOTU FROM THE CORNER",
+        desc: "Chotu, age nine, official messenger of the lane, is bouncing on his heels. 'Uncle! Watch says check your water drums, and Sana-didi's team won cricket, and ALSO there was a noise from the big heap but Bablu says it was a cat. It wasn't a cat, uncle.'",
+        yes: { stress: -5, message: "You give him a biscuit and he delivers the whole lane's news in ninety seconds flat, then sprints off. The lane's nervous system, in slippers." },
+        no: { stress: +2, message: "'FINE, uncle.' He yells the news through the door anyway, all of it, then runs off. Information delivered. Dignity intact." },
+      };
+      return this._wrap(v, "person");
+    },
+
+    _communityWatch() {
+      const v = {
+        sprite: "person", color: "#3aa06a",
+        title: "THE COMMUNITY WATCH",
+        desc: "Two men from the watch with iron rods and a coil of rope. 'Rota check, brother. Your door good? We're boarding weak frames tonight — landlord's boys sent boards. Two minutes, no charge, no argument.'",
+        yes: { stress: -5, repair: 1, message: "They brace your frame with a board in under two minutes, chalk a tick on the wall, and move on. The lane holds together because of exactly this." },
+        no: { stress: +3, message: "'Your call. Bang a pot if anything moves near the heap.' The chalk tick on your wall stays blank. It bothers you more than it should." },
+      };
+      return this._wrap(v, "person");
+    },
+
+    _sickNeighbor() {
+      const v = {
+        sprite: "person", color: "#7a4a4a",
+        title: "GANESH — AND HE LOOKS WRONG",
+        desc: "Ganesh from the tap queue leans on your frame, sweating through his shirt. 'Brother… fever. Aunty's line is too long, the hospital is sealed. Let me sit inside one hour, that's all.' There is no clinic. There is no doctor. There is only your judgment.",
+        yes: { stress: -1, risk: 0.35, message: "You sit him in the corner with water and a wet cloth. The fever breaks by evening — ordinary dengue-season fever, thank god. He grips your hand hard before he goes.", flags: { ally: true } },
+        no: { stress: +11, message: "You keep it shut and call through the wood for the watch to fetch the aunty network. His footsteps shuffle away. You'll be checking on him tomorrow — from a distance." },
+      };
+      return this._wrap(v, "person");
+    },
+
+    _trashZombie() {
+      const v = {
+        sprite: "infected", color: "#5a6b4e",
+        title: "SOMETHING FROM THE HEAP",
+        desc: "It isn't knocking. It's leaning — a slow, wet weight against the door. Through the peephole: a shape wrapped in refuse, plastic and rag fused to grey skin, flies moving where a face should be. A kachra walker. The only kind the water couldn't kill.",
+        yes: { ending: "infected", message: "You open the door. The trash shifts, and the thing inside it is faster than anything wrapped in garbage should be." },
+        no: { stress: +9, message: "You bang a pot, hard, three times. Rods and shouting answer from up the lane — the watch drags it back to the heap it crawled from. Your hands don't stop shaking for a while." },
+      };
+      return this._wrap(v, "infected");
+    },
+
+    _exodus() {
+      const v = {
+        sprite: "person", color: "#2a9db0",
+        title: "RAVI — THE LORRIES ARE HERE",
+        desc: "Ravi's grin fills the peephole. 'It's ON. Aunties arranged lorries, watch cleared the back paths, cordon captain looked the other way. Whole lane goes at dawn — village side, clean air, Amma's district. EVERYONE goes. Grab the others and come!'",
+        yes: { ending: "exodus", message: "You wake the house. Five of you, one lane, one convoy north." },
+        no: { stress: +8, message: "'…You're staying? Then the watch keeps your rota slot open.' He grips your shoulder through the gap. 'The radio says the lane can outlast it. Prove it, brother.'" },
+      };
+      return this._wrap(v, "person");
+    },
+
     _militia() {
       const v = {
         sprite: "person", color: "#5a5a3a",
@@ -656,6 +890,30 @@
           game.toast("A scream rises somewhere outside — cut brutally short.");
           game.player.addStress(6);
         } },
+      { id: "chai", minPhase: 0, weight: 4, zones: ["slum"], run(game) {
+          game.player.addStress(-6);
+          const lines = [
+            "Sana presses a steel cup of chai into your hands without a word. It helps more than the barricades do.",
+            "Ravi hums an old filmi song while fixing the stove. Meera joins in, terribly. The room feels human again.",
+            "Arjun deals cards on the mat. 'Losers take the next water shift.' For twenty minutes, there is no outbreak.",
+            "Meera reads Amma's message aloud to everyone. The whole room says 'boil the water twice' in unison and laughs.",
+          ];
+          game.toast(lines[Math.floor(Math.random() * lines.length)]);
+        } },
+      { id: "potbang", minPhase: 2, weight: 3, zones: ["slum"], run(game) {
+          game.audio.thud();
+          game.toast("Pots bang somewhere up the lane — the alarm. Then rods, shouting, and finally a cheer. The watch got it.");
+          game.player.addStress(4);
+        } },
+      { id: "floaters", minPhase: 3, weight: 3, zones: ["slum"], run(game) {
+          game.toast("More of them in the river today, drifting past like the city is exhaling. The radio counts them like a cricket score. The water is winning.");
+          game.player.addStress(3);
+        } },
+      { id: "heapshift", minPhase: 3, weight: 3, zones: ["slum"], run(game) {
+          game.audio.houseNoise();
+          game.toast("The big heap across the lane shifts — a slow, deliberate settling that garbage doesn't do on its own. You keep your eyes on it until it stops.");
+          game.player.addStress(7);
+        } },
       { id: "strikewave", minPhase: 2, weight: 4, zones: ["gray"], run(game) {
           game.flags.helicopter = true;
           game.audio.helicopterPass();
@@ -721,5 +979,6 @@
   ZH.Content = {
     TV_TIMELINE, GOV_ALERTS, PHONE_MSGS, ENDINGS, PHASES, ORDERS,
     MESSAGES, NEWSPAPERS, VIRUS_REPORTS, SOCIAL,
+    SLUM_TV_TIMELINE, SLUM_RADIO, SLUM_MESSAGES, SLUM_ALERTS,
   };
 })(window.ZH = window.ZH || {});

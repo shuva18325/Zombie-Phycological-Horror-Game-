@@ -58,7 +58,27 @@
       rug: "braided", art: "sampler", lamp: "lantern", quilt: true, stove: true,
       planks: true, wainscot: false,
     },
+    // The shared one-room home in the lane (yellow-green walls,
+    // corrugated ceiling, crowded shelves, floor mats, four friends).
+    slum: {
+      slum: true,
+      wallTop: "#a8a24e", wallBot: "#8f8946", trim: "#6e6a3a",
+      floorA: "#9a9282", floorB: "#7d7568",
+      winFrame: "#4a6a72", curtains: "#8a4a7a",
+      couch: null,
+      door: "#5a6a72", doorTrim: "#43525a",
+      rug: "mats", art: "shrine", lamp: "bulb", quilt: false, stove: false,
+      planks: false, wainscot: false,
+    },
   };
+
+  // Your four housemates, on the mats. The reason your stress stays low.
+  const HOUSEMATES = [
+    { x: 258, y: 196, shirt: "#c05a3a", skin: "#a0663a" },  // Ravi
+    { x: 296, y: 210, shirt: "#3a7ac0", skin: "#8a5a34" },  // Arjun
+    { x: 334, y: 198, shirt: "#3aa06a", skin: "#a0663a" },  // Sana
+    { x: 366, y: 214, shirt: "#c0a03a", skin: "#8a5a34" },  // Meera
+  ];
 
   const Renderer = {
     W: 480,
@@ -116,7 +136,10 @@
       return s && s.complete && s.naturalWidth ? s : null;
     },
 
-    _theme(game) { return THEMES[game.areaId] || THEMES.city; },
+    _theme(game) {
+      if (game.zoneId === "slum") return THEMES.slum;
+      return THEMES[game.areaId] || THEMES.city;
+    },
 
     /* ------------------------------------------------------------ */
     update(dt, game) {
@@ -217,6 +240,28 @@
           ctx.beginPath(); ctx.moveTo(x + 0.5, 80); ctx.lineTo(x + 0.5, 104); ctx.stroke();
         }
       }
+      if (T.slum) {
+        // rough damp patches on the painted wall
+        ctx.fillStyle = "rgba(90,110,90,0.25)";
+        ctx.fillRect(40, 30, 26, 18);
+        ctx.fillRect(250, 14, 20, 12);
+        ctx.fillRect(440, 70, 14, 20);
+        // corrugated metal ceiling
+        ctx.fillStyle = "#8a8d92";
+        ctx.fillRect(0, 0, this.W, 8);
+        ctx.strokeStyle = "#6b6e73";
+        for (let x = 0; x < this.W; x += 8) {
+          ctx.beginPath(); ctx.moveTo(x + 0.5, 0); ctx.lineTo(x + 0.5, 8); ctx.stroke();
+        }
+        // clothesline with hanging clothes (top-left, like the photo)
+        ctx.strokeStyle = "#3a3226";
+        ctx.beginPath(); ctx.moveTo(4, 14); ctx.lineTo(104, 20); ctx.stroke();
+        const cloth = [["#c9a13b", 12], ["#3a7ac0", 34], ["#c05a8a", 56], ["#e4ddcc", 78]];
+        for (const [col, cx2] of cloth) {
+          ctx.fillStyle = col;
+          ctx.fillRect(cx2, 16 + (cx2 % 3), 14, 11);
+        }
+      }
       ctx.fillStyle = T.trim;
       ctx.fillRect(0, 106, this.W, 6);
 
@@ -226,14 +271,30 @@
       floorGrad.addColorStop(1, T.floorB);
       ctx.fillStyle = floorGrad;
       ctx.fillRect(0, 112, this.W, this.H - 112);
-      ctx.strokeStyle = "rgba(60,38,18,0.30)";
-      ctx.lineWidth = 1;
-      const plankH = T.planks ? 24 : 18;
-      for (let y = 112 + plankH; y < this.H; y += plankH) {
-        ctx.beginPath(); ctx.moveTo(0, y + 0.5); ctx.lineTo(this.W, y + 0.5); ctx.stroke();
-      }
-      for (let x = 30; x < this.W; x += 60) {
-        ctx.beginPath(); ctx.moveTo(x + 0.5, 112); ctx.lineTo(x + 0.5, this.H); ctx.stroke();
+      if (T.slum) {
+        // worn stone tiles
+        ctx.strokeStyle = "rgba(60,58,50,0.35)";
+        ctx.lineWidth = 1;
+        for (let y = 112; y < this.H; y += 26) {
+          ctx.beginPath(); ctx.moveTo(0, y + 0.5); ctx.lineTo(this.W, y + 0.5); ctx.stroke();
+        }
+        for (let x = 0; x < this.W; x += 30) {
+          ctx.beginPath(); ctx.moveTo(x + 0.5, 112); ctx.lineTo(x + 0.5, this.H); ctx.stroke();
+        }
+        // a stained tile or two
+        ctx.fillStyle = "rgba(90,80,60,0.3)";
+        ctx.fillRect(60, 190, 30, 26);
+        ctx.fillRect(390, 216, 30, 26);
+      } else {
+        ctx.strokeStyle = "rgba(60,38,18,0.30)";
+        ctx.lineWidth = 1;
+        const plankH = T.planks ? 24 : 18;
+        for (let y = 112 + plankH; y < this.H; y += plankH) {
+          ctx.beginPath(); ctx.moveTo(0, y + 0.5); ctx.lineTo(this.W, y + 0.5); ctx.stroke();
+        }
+        for (let x = 30; x < this.W; x += 60) {
+          ctx.beginPath(); ctx.moveTo(x + 0.5, 112); ctx.lineTo(x + 0.5, this.H); ctx.stroke();
+        }
       }
 
       /* ---- windows: frames + the world outside ---- */
@@ -308,6 +369,29 @@
           ctx.fillStyle = "#d8b088";
           ctx.fillRect(fx2 + fw2 / 2 - 2, fy2 + 5, 4, 4); // little face
         }
+      } else if (T.art === "shrine") {
+        // framed Taj Mahal print + the shrine shelf with a burning diya
+        ctx.fillStyle = "#8a6a2a";
+        ctx.fillRect(110, 8, 38, 26);
+        ctx.fillStyle = "#2a4a6a";
+        ctx.fillRect(113, 11, 32, 20);
+        ctx.fillStyle = "#e8e4dc";               // the Taj
+        ctx.fillRect(122, 18, 14, 10);
+        ctx.beginPath();
+        ctx.arc(129, 18, 5, Math.PI, 0); ctx.fill();
+        ctx.fillRect(115, 16, 2, 12); ctx.fillRect(141, 16, 2, 12); // minarets
+        // shrine shelf
+        ctx.fillStyle = "#6e5236";
+        ctx.fillRect(152, 26, 30, 3);
+        ctx.fillStyle = "#c9553a";
+        ctx.fillRect(156, 16, 8, 10);            // little idol
+        ctx.fillStyle = "#e0a83c";
+        ctx.fillRect(158, 13, 4, 4);
+        // diya flame (flickers)
+        ctx.fillStyle = "#8a6234";
+        ctx.fillRect(170, 22, 6, 4);
+        ctx.fillStyle = "rgba(255," + Math.floor(150 + 80 * this.world.flame) + ",60,0.95)";
+        ctx.fillRect(172, 18 - Math.round(this.world.flame), 2, 4);
       } else {
         // cross-stitch "HOME" sampler
         ctx.fillStyle = "#5c452e";
@@ -354,7 +438,25 @@
       ctx.strokeStyle = "#d8d4c9";
       ctx.strokeRect(144.5, 62.5, 35, 13);
       ctx.strokeRect(186.5, 62.5, 35, 13);
-      if (T.quilt) {
+      if (T.slum) {
+        // bright printed bedcover (red & gold, like the photo)
+        ctx.fillStyle = "#9a2430";
+        ctx.fillRect(136, 74, 96, 54);
+        ctx.fillStyle = "#c9a13b";
+        for (let qy = 0; qy < 3; qy++) {
+          for (let qx = 0; qx < 6; qx++) {
+            const dx = 146 + qx * 16, dy = 82 + qy * 16;
+            ctx.fillRect(dx, dy + 3, 3, 3);
+            ctx.fillRect(dx + 3, dy, 3, 3);
+            ctx.fillRect(dx + 6, dy + 3, 3, 3);
+            ctx.fillRect(dx + 3, dy + 6, 3, 3);
+          }
+        }
+        ctx.fillStyle = "#e8d44d";
+        ctx.fillRect(136, 122, 96, 4);           // gold border
+        ctx.strokeStyle = "rgba(60,10,15,0.4)";
+        ctx.strokeRect(136.5, 74.5, 95, 53);
+      } else if (T.quilt) {
         // patchwork quilt
         const cols = ["#a34a3a", "#3a5a7a", "#c9a13b", "#e8e0cc"];
         for (let qy = 0; qy < 4; qy++) {
@@ -397,6 +499,27 @@
       ctx.fillRect(344, 136, 26, 3);
 
       /* ---- kitchenette: dresser + coffee + (hotplate | wood stove) ---- */
+      if (T.slum) {
+        // steel fridge (like the photo) + chai pot on a crate
+        ctx.fillStyle = "#b8bcc0";
+        ctx.fillRect(428, 40, 26, 72);
+        ctx.fillStyle = "#9a9ea3";
+        ctx.fillRect(428, 66, 26, 3);            // freezer line
+        ctx.fillRect(430, 48, 2, 12);            // handle
+        ctx.fillRect(430, 74, 2, 16);
+        ctx.fillStyle = "#7d8186";
+        ctx.fillRect(428, 108, 26, 4);
+        // crate under the chai/coffee pot
+        ctx.fillStyle = "#8a6a3a";
+        ctx.fillRect(404, 64, 22, 48);
+        ctx.strokeStyle = "#5e4626";
+        ctx.strokeRect(406.5, 70.5, 17, 16);
+        ctx.strokeRect(406.5, 90.5, 17, 16);
+        // steel pots stacked beside
+        ctx.fillStyle = "#c9cdd2";
+        ctx.fillRect(408, 58, 12, 4);
+        ctx.fillRect(410, 54, 8, 4);
+      } else {
       ctx.fillStyle = "#97713f";
       ctx.fillRect(404, 64, 50, 48);
       ctx.strokeStyle = "#6e4f28";
@@ -404,7 +527,8 @@
       ctx.strokeRect(408.5, 86.5, 41, 12);
       ctx.fillStyle = "#e0c47a";
       ctx.fillRect(427, 74, 4, 3); ctx.fillRect(427, 90, 4, 3);
-      // coffee maker
+      }
+      // coffee maker / chai pot (same spot in every home)
       ctx.fillStyle = "#1d1f24";
       ctx.fillRect(408, 46, 16, 18);
       ctx.fillStyle = "#101116";
@@ -420,7 +544,7 @@
         ctx.fillRect(434, 48, 10, 6);          // ember glow
         ctx.fillStyle = "#3a3d44";
         ctx.fillRect(430, 62, 4, 3); ctx.fillRect(444, 62, 4, 3); // legs
-      } else {
+      } else if (!T.slum) {
         // hotplate + basket
         ctx.fillStyle = "#2a2c31";
         ctx.fillRect(428, 56, 14, 8);
@@ -453,6 +577,14 @@
         ctx.beginPath();
         ctx.moveTo(442, 34); ctx.lineTo(456, 34); ctx.lineTo(452, 22); ctx.lineTo(446, 22);
         ctx.closePath(); ctx.fill();
+      } else if (T.lamp === "bulb") {
+        // one bare bulb on a wire from the corrugated ceiling
+        ctx.strokeStyle = "#2a2620";
+        ctx.beginPath(); ctx.moveTo(240, 8); ctx.lineTo(240, 26); ctx.stroke();
+        ctx.fillStyle = "#3a3630";
+        ctx.fillRect(237, 26, 6, 4);
+        ctx.fillStyle = lampOn ? "#ffe9a0" : "#6a6250";
+        ctx.beginPath(); ctx.arc(240, 34, 4, 0, Math.PI * 2); ctx.fill();
       } else {
         // oil lantern hanging by the door
         ctx.strokeStyle = "#3a3226";
@@ -505,6 +637,20 @@
         ctx.strokeStyle = "#5e3833";
         ctx.lineWidth = 1;
         ctx.strokeRect(66.5, 184.5, 181, 73);
+      } else if (T.rug === "mats") {
+        // woven floor mats where everyone sits
+        ctx.fillStyle = "#7a8a4a";
+        ctx.fillRect(70, 196, 110, 52);
+        ctx.strokeStyle = "#5e6a38";
+        ctx.strokeRect(74.5, 200.5, 101, 43);
+        ctx.fillStyle = "#8a4a6a";
+        ctx.fillRect(240, 188, 150, 56);
+        ctx.strokeStyle = "#6a3852";
+        ctx.strokeRect(244.5, 192.5, 141, 47);
+        ctx.strokeStyle = "rgba(0,0,0,0.12)";
+        for (let x = 250; x < 386; x += 10) {
+          ctx.beginPath(); ctx.moveTo(x + 0.5, 192); ctx.lineTo(x + 0.5, 240); ctx.stroke();
+        }
       } else {
         // braided oval
         for (let i = 0; i < 5; i++) {
@@ -514,6 +660,7 @@
           ctx.ellipse(157, 221, 88 - i * 16, 36 - i * 6.5, 0, 0, Math.PI * 2);
           ctx.stroke();
         }
+        ctx.lineWidth = 1;
       }
 
       /* ---- coffee table ---- */
@@ -530,7 +677,36 @@
       ctx.fillStyle = "#caa25a"; ctx.fillRect(150, 197, 8, 5);
       ctx.fillStyle = "#23262c"; ctx.fillRect(168, 199, 10, 3);
 
-      /* ---- sectional couch (themed fabric) ---- */
+      /* ---- sectional couch — or the four friends on the mats ---- */
+      if (T.slum) {
+        for (let i = 0; i < HOUSEMATES.length; i++) {
+          const hm = HOUSEMATES[i];
+          const bob = Math.sin(this.t * 1.6 + i * 1.7) * 0.8;
+          // shadow
+          ctx.fillStyle = "rgba(0,0,0,0.25)";
+          ctx.beginPath();
+          ctx.ellipse(hm.x + 5, hm.y + 18, 7, 2.5, 0, 0, Math.PI * 2);
+          ctx.fill();
+          // crossed legs
+          ctx.fillStyle = "#3a3630";
+          ctx.fillRect(hm.x - 2, hm.y + 13, 14, 5);
+          // body
+          ctx.fillStyle = hm.shirt;
+          ctx.fillRect(hm.x, hm.y + bob, 10, 14);
+          // head
+          ctx.fillStyle = hm.skin;
+          ctx.fillRect(hm.x + 2, hm.y - 7 + bob, 7, 7);
+          // hair
+          ctx.fillStyle = "#181410";
+          ctx.fillRect(hm.x + 1, hm.y - 9 + bob, 9, 4);
+          // a steel cup of chai in someone's hands
+          if (i === 2) {
+            ctx.fillStyle = "#c9cdd2";
+            ctx.fillRect(hm.x + 10, hm.y + 6 + bob, 3, 4);
+          }
+        }
+        return; // no couch, no coffee table clutter changes
+      }
       const C = T.couch;
       ctx.fillStyle = C[0];
       ctx.fillRect(230, 146, 162, 24);
@@ -677,12 +853,15 @@
       }
 
       // scene ground line + scene itself
+      const slum = game.zoneId === "slum";
       let base;
-      if (area === "rural") base = gy + gh * 0.55;
+      if (slum) base = gy + gh * 0.6;
+      else if (area === "rural") base = gy + gh * 0.55;
       else if (area === "suburb") base = gy + gh * 0.62;
       else base = gy + gh * 0.66;
 
-      if (area === "rural") this._outRural(o, game, base, seed, day);
+      if (slum) this._outSlum(o, game, base, seed, day);
+      else if (area === "rural") this._outRural(o, game, base, seed, day);
       else if (area === "suburb") this._outSuburb(o, game, base, seed, day);
       else this._outCity(o, game, base, seed, day);
 
@@ -933,6 +1112,149 @@
       }
     },
 
+    /* ---- SLUM LANE: corrugated shacks, tarps, heaps — and the river ---- */
+    _outSlum(o, game, base, seed, day) {
+      const ctx = this.ctx;
+      const w = this.world;
+      const gx = o.fx, gy = o.fy, gw = o.fw, gh = o.fh;
+      const det = game.det || 0;
+
+      // hazy far towers
+      ctx.fillStyle = this._rgb(this._mix([16, 18, 24], [70, 74, 84], day * 0.35));
+      for (let i = 0; i < 3; i++) {
+        const bx = gx + ((i * 53 + seed) % (gw + 10)) - 5;
+        ctx.fillRect(bx, base - 34 - (i * 7 + seed) % 10, 9, 30);
+      }
+
+      // back row of shacks (darker)
+      const backCols = ["#5e3a30", "#3a4a5e", "#5e5030"];
+      for (let i = 0; i < 4; i++) {
+        const bx = gx + i * (gw / 4) + ((seed * 3) % 5) - 2;
+        const bw2 = gw / 4 - 2;
+        ctx.fillStyle = backCols[(i + seed) % 3];
+        ctx.fillRect(bx, base - 26, bw2, 18);
+        ctx.fillStyle = "#4a4d52";
+        ctx.fillRect(bx - 1, base - 29, bw2 + 2, 4);       // tin roof
+      }
+
+      // front row: the bright shack fronts (red/orange/blue, like the photo)
+      const cols = ["#b04a34", "#c9762e", "#3a7a9a", "#a03a3a", "#3aa0a0"];
+      for (let i = 0; i < 3; i++) {
+        const bx = gx + 2 + i * (gw / 3);
+        const bw2 = gw / 3 - 5;
+        const burned = det >= 3.5 && (i + seed) % 4 === 0;
+        ctx.fillStyle = burned ? "#241a14" : cols[(i + seed) % 5];
+        ctx.fillRect(bx, base - 18, bw2, 16);
+        // corrugation lines
+        ctx.strokeStyle = "rgba(0,0,0,0.25)";
+        for (let vx = bx + 2; vx < bx + bw2; vx += 4) {
+          ctx.beginPath(); ctx.moveTo(vx + 0.5, base - 18); ctx.lineTo(vx + 0.5, base - 2); ctx.stroke();
+        }
+        // tin roof + blue tarp
+        ctx.fillStyle = "#63666b";
+        ctx.fillRect(bx - 2, base - 21, bw2 + 4, 4);
+        if ((i + seed) % 2 === 0) {
+          ctx.fillStyle = det >= 3 ? "#2a4a66" : "#2e6aa0";
+          ctx.fillRect(bx + 2, base - 23, bw2 - 6, 3);
+        }
+        // doorway + window
+        ctx.fillStyle = "#1a1410";
+        ctx.fillRect(bx + 3, base - 12, 5, 10);
+        ctx.fillStyle = det >= 2 ? "#131720" : "#7a94a8";
+        ctx.fillRect(bx + bw2 - 9, base - 14, 6, 5);
+        if (det >= 3 && (i + seed) % 3 === 1) {
+          ctx.fillStyle = "rgba(255," + Math.floor(110 + 90 * w.flame) + ",40," + (0.5 + 0.4 * w.flame) + ")";
+          ctx.fillRect(bx + 3, base - 16, 6, 6);
+          this._smoke(bx + 6, base - 23, gy);
+        }
+      }
+
+      // tangled power lines across the lane
+      ctx.strokeStyle = "rgba(20,18,16,0.7)";
+      ctx.beginPath();
+      ctx.moveTo(gx, gy + 14 + (seed % 5));
+      ctx.quadraticCurveTo(gx + gw / 2, gy + 22 + (seed % 7), gx + gw, gy + 12 + (seed % 4));
+      ctx.moveTo(gx, gy + 18 + (seed % 4));
+      ctx.quadraticCurveTo(gx + gw / 2, gy + 27, gx + gw, gy + 17);
+      ctx.stroke();
+
+      // the lane itself
+      ctx.fillStyle = "#6a5a44";
+      ctx.fillRect(gx, base, gw, gy + gh - base);
+
+      // lane life: people early, empty later
+      if (det < 2.5 && w.dark < 0.6) {
+        const n = det < 1 ? 4 : 2;
+        for (let i = 0; i < n; i++) {
+          const px2 = gx + ((this.t * (6 + i * 2) + i * 37 + seed) % gw);
+          const py2 = base + 4 + (i * 7) % Math.max(3, gy + gh - base - 8);
+          ctx.fillStyle = ["#c05a3a", "#3a7ac0", "#c9a13b", "#3aa06a"][i % 4];
+          ctx.fillRect(px2, py2 - 5, 3, 5);
+          ctx.fillStyle = "#8a5a34";
+          ctx.fillRect(px2, py2 - 8, 3, 3);
+        }
+      }
+
+      // trash heaps — and what lives in them
+      for (const hx of [gx + 8 + (seed % 10), gx + gw - 26]) {
+        ctx.fillStyle = "#4a4438";
+        ctx.fillRect(hx, base + 2, 18, 6);
+        ctx.fillRect(hx + 3, base - 1, 12, 4);
+        ctx.fillStyle = "#5e82a0";                          // blue bags
+        ctx.fillRect(hx + 2, base + 1, 4, 3);
+        ctx.fillStyle = "#c9c2b0";                          // white bags
+        ctx.fillRect(hx + 10, base, 4, 3);
+        ctx.fillStyle = "#7a8a4a";
+        ctx.fillRect(hx + 14, base + 3, 3, 2);
+        // det>=3: the heap breathes
+        if (det >= 3 && Math.sin(this.t * 0.9 + hx) > 0.93) {
+          ctx.fillStyle = "#3a4436";
+          ctx.fillRect(hx + 6, base - 4, 5, 4);            // something rising
+        }
+      }
+
+      if (seed < 250) {
+        // LEFT pane: the railway line (like the photo)
+        const ry = gy + gh - 7;
+        ctx.fillStyle = "#3a342c";
+        for (let sx2 = gx; sx2 < gx + gw; sx2 += 6) {
+          ctx.fillRect(sx2, ry, 4, 2);                      // sleepers
+        }
+        ctx.strokeStyle = "#8a8d92";
+        ctx.beginPath();
+        ctx.moveTo(gx, ry); ctx.lineTo(gx + gw, ry);
+        ctx.moveTo(gx, ry + 3); ctx.lineTo(gx + gw, ry + 3);
+        ctx.stroke();
+      } else {
+        // RIGHT pane: the Mithi river — where the infected go to die
+        const ry = gy + gh - 12;
+        ctx.fillStyle = "#33463a";
+        ctx.fillRect(gx, ry, gw, 12);
+        ctx.strokeStyle = "rgba(140,170,150,0.2)";
+        for (let i = 0; i < 3; i++) {
+          const wy = ry + 3 + i * 3;
+          ctx.beginPath();
+          ctx.moveTo(gx, wy + Math.sin(this.t + i) * 1);
+          ctx.lineTo(gx + gw, wy + Math.cos(this.t + i) * 1);
+          ctx.stroke();
+        }
+        // the floaters (det>=2): pale shapes drifting with the current
+        if (det >= 2) {
+          const n = det >= 3.5 ? 4 : det >= 3 ? 3 : 1;
+          for (let i = 0; i < n; i++) {
+            const fx2 = gx + ((this.t * 4 + i * 43 + seed) % (gw + 16)) - 8;
+            const fy2 = ry + 3 + (i * 3) % 7;
+            ctx.fillStyle = "#8a9284";
+            ctx.fillRect(fx2, fy2, 7, 2);                  // a body, face down
+            ctx.fillStyle = "#6e7668";
+            ctx.fillRect(fx2 + 5, fy2 - 1, 2, 2);          // the head
+          }
+        }
+      }
+
+      this._decayCommon(o, game, base, seed);
+    },
+
     /* shared street decay bits (trash, paper, abandoned car, rubble) */
     _decayCommon(o, game, base, seed) {
       const ctx = this.ctx;
@@ -990,14 +1312,31 @@
       const w = this.world;
       const gx = o.fx, gy = o.fy, gw = o.fw, gh = o.fh;
 
+      const trashy = game.zoneId === "slum";
       for (const z of w.shamblers) {
         if (z.x < gx - 20 || z.x > gx + gw + 20) continue;
         const zx = z.x, zy = base + 2;
         const tw2 = Math.sin(z.t * 7) * 0.8;
-        ctx.fillStyle = "#4e5c46";
-        ctx.fillRect(zx - 2 + tw2, zy - 10, 5, 10);
-        ctx.fillStyle = "#6a785c";
-        ctx.fillRect(zx - 1 + tw2, zy - 13, 3, 3);
+        if (trashy) {
+          // a kachra walker: refuse fused to the body
+          ctx.fillStyle = "#4a4438";
+          ctx.fillRect(zx - 3 + tw2, zy - 10, 7, 10);
+          ctx.fillStyle = "#5e82a0";                        // plastic scraps
+          ctx.fillRect(zx - 2 + tw2, zy - 8, 2, 2);
+          ctx.fillStyle = "#c9c2b0";                        // rag
+          ctx.fillRect(zx + 1 + tw2, zy - 5, 2, 3);
+          ctx.fillStyle = "#3a4436";
+          ctx.fillRect(zx - 1 + tw2, zy - 13, 4, 3);        // head under debris
+          if (Math.sin(z.t * 5) > 0.6) {                    // flies
+            ctx.fillStyle = "rgba(20,20,16,0.8)";
+            ctx.fillRect(zx + 3 + tw2, zy - 14, 1, 1);
+          }
+        } else {
+          ctx.fillStyle = "#4e5c46";
+          ctx.fillRect(zx - 2 + tw2, zy - 10, 5, 10);
+          ctx.fillStyle = "#6a785c";
+          ctx.fillRect(zx - 1 + tw2, zy - 13, 3, 3);
+        }
       }
 
       const sspr = this._spr("soldier");
