@@ -1,11 +1,15 @@
 /* ============================================================
    world.js — the national Peclip situation map
-   Zone tiers, every state's tier + tile-grid position, spawn
-   areas, the menu location picker, and drawMap() which paints
-   the live national map (used by the computer's MAP app and
-   the TV's mini-map). The map evolves with the national phase:
-   green protected cities, the eastern collapse, the California
-   gray zone, partially-gray border states, and the walls.
+   Zone tiers, every state's tier + geographic block position,
+   spawn areas, the menu location picker, and drawMap() which
+   paints a real-shaped USA out of state blocks (with AK/HI
+   insets) that darkens as the national phase advances.
+
+   PACING MODEL: every zone starts at a perfectly normal Day 1.
+   A zone's `speed` controls how fast the national collapse
+   reaches YOUR street:  local = floor(national × speed).
+   Gray zones fall days earlier; Green fortresses never fully
+   fall at all.
    Exposes: window.ZH.World
    ============================================================ */
 (function (ZH) {
@@ -13,118 +17,118 @@
 
   const ZONES = {
     green: {
-      label: "GREEN SAFE ZONE", color: "#2e7d6b", offset: -1,
+      label: "GREEN SAFE ZONE", color: "#2e7d6b", speed: 0.7,
       knockMul: 1.6, horrorMul: 1.5, breachMul: 0.25,
-      desc: "Militarized, fortified, functioning. Walls, patrols and curfews keep the infection down to rumors — mostly.",
+      desc: "Fortified and functioning. The collapse arrives late here, and never completely.",
     },
     yellow: {
-      label: "STRAINED ZONE", color: "#e0c23c", offset: 0,
+      label: "STRAINED ZONE", color: "#e0c23c", speed: 1.0,
       knockMul: 1.0, horrorMul: 1.0, breachMul: 1.0,
-      desc: "Rationing, curfews, sporadic incidents. Holding — for now.",
+      desc: "The outbreak reaches you on the national schedule. Rationing, curfews, sporadic incidents.",
     },
     orange: {
-      label: "FRONTLINE ZONE", color: "#d0812c", offset: 1,
+      label: "FRONTLINE ZONE", color: "#d0812c", speed: 1.2,
       knockMul: 0.85, horrorMul: 0.8, breachMul: 1.3,
-      desc: "Heavy military presence, evacuations underway, incidents every night. The line is close and getting closer.",
+      desc: "Trouble runs a day or two ahead of the news here. The line is close and getting closer.",
     },
     red: {
-      label: "OVERRUN ZONE", color: "#c05038", offset: 1,
+      label: "OVERRUN ZONE", color: "#c05038", speed: 1.4,
       knockMul: 0.7, horrorMul: 0.65, breachMul: 1.6,
-      desc: "Emergency services have collapsed. The infected move openly after dark.",
+      desc: "Everything happens early and hard. Emergency services will collapse days before the broadcasts admit it.",
     },
     darkred: {
-      label: "COLLAPSED ZONE", color: "#8a1a1e", offset: 2,
+      label: "COLLAPSED ZONE", color: "#8a1a1e", speed: 1.6,
       knockMul: 0.6, horrorMul: 0.55, breachMul: 2.0,
-      desc: "Lost territory behind the containment lines. No evacuation is coming, and the sweeps begin at dawn.",
+      desc: "The eastern seaboard. It falls first, it falls fastest, and no evacuation route stays open for long.",
     },
     gray: {
-      label: "GRAY ZONE — UNRECOVERABLE", color: "#6b7076", offset: 2,
+      label: "GRAY ZONE — UNRECOVERABLE", color: "#6b7076", speed: 1.85,
       knockMul: 0.55, horrorMul: 0.5, breachMul: 2.2,
-      desc: "No government. No rescue. Gangs and militias hold the streets while helicopter strike waves burn the clusters.",
+      desc: "Ground zero regions. Days ahead of the country: government gone early, militias and gangs holding the blocks.",
     },
   };
 
-  /* Zone assignment follows the national situation map.
-     g: [col, row] tile position on the 11x8 grid cartogram
+  /* Zone tier follows the national situation map.
+     m: [x, y, w, h] geographic block on a 100×64 map space
      (null for special locations that aren't a whole state). */
   const STATES = [
     // ---- GREEN SAFE ZONES ----
-    { id: "NYC", name: "New York City — Fortress", zone: "green", g: null },
-    { id: "WA", name: "Washington", zone: "green", g: [1, 1] },
-    { id: "ID", name: "Idaho", zone: "green", g: [2, 2] },
-    { id: "MT", name: "Montana", zone: "green", g: [2, 1] },
-    { id: "WY", name: "Wyoming", zone: "green", g: [3, 3] },
-    { id: "ND", name: "North Dakota", zone: "green", g: [3, 1] },
-    { id: "SD", name: "South Dakota", zone: "green", g: [3, 2] },
-    { id: "NE", name: "Nebraska", zone: "green", g: [4, 3] },
-    { id: "MN", name: "Minnesota", zone: "green", g: [4, 1] },
-    { id: "IA", name: "Iowa", zone: "green", g: [4, 2] },
-    { id: "WI", name: "Wisconsin", zone: "green", g: [5, 1] },
-    { id: "MI", name: "Michigan", zone: "green", g: [6, 1] },
-    { id: "AK", name: "Alaska", zone: "green", g: [0, 0] },
-    { id: "HI", name: "Hawaii", zone: "green", g: [0, 7] },
+    { id: "NYC", name: "New York City — Fortress", zone: "green", m: null },
+    { id: "WA", name: "Washington", zone: "green", m: [5, 3, 9, 7] },
+    { id: "ID", name: "Idaho", zone: "green", m: [15, 7, 7, 12] },
+    { id: "MT", name: "Montana", zone: "green", m: [23, 3, 14, 8] },
+    { id: "WY", name: "Wyoming", zone: "green", m: [23, 12, 12, 7] },
+    { id: "ND", name: "North Dakota", zone: "green", m: [38, 3, 10, 7] },
+    { id: "SD", name: "South Dakota", zone: "green", m: [38, 11, 10, 7] },
+    { id: "NE", name: "Nebraska", zone: "green", m: [36, 19, 12, 6] },
+    { id: "MN", name: "Minnesota", zone: "green", m: [49, 3, 9, 9] },
+    { id: "IA", name: "Iowa", zone: "green", m: [49, 13, 9, 6] },
+    { id: "WI", name: "Wisconsin", zone: "green", m: [59, 5, 7, 8] },
+    { id: "MI", name: "Michigan", zone: "green", m: [67, 4, 8, 9] },
+    { id: "AK", name: "Alaska", zone: "green", m: [3, 46, 13, 10], inset: "ALASKA" },
+    { id: "HI", name: "Hawaii", zone: "green", m: [19, 52, 9, 4], inset: "HAWAII" },
     // ---- STRAINED ----
-    { id: "UT", name: "Utah", zone: "yellow", g: [2, 4] },
-    { id: "CO", name: "Colorado", zone: "yellow", g: [3, 4] },
-    { id: "KS", name: "Kansas", zone: "yellow", g: [4, 4] },
-    { id: "MO", name: "Missouri", zone: "yellow", g: [5, 3] },
-    { id: "IL", name: "Illinois", zone: "yellow", g: [5, 2] },
-    { id: "OK", name: "Oklahoma", zone: "yellow", g: [4, 5] },
-    { id: "AR", name: "Arkansas", zone: "yellow", g: [5, 4] },
-    { id: "LA", name: "Louisiana", zone: "yellow", g: [5, 5] },
-    { id: "MS", name: "Mississippi", zone: "yellow", g: [6, 5] },
-    { id: "AL", name: "Alabama", zone: "yellow", g: [6, 6] },
-    { id: "GA", name: "Georgia", zone: "yellow", g: [7, 6] },
-    { id: "SC", name: "South Carolina", zone: "yellow", g: [8, 5] },
-    { id: "NC", name: "North Carolina", zone: "yellow", g: [7, 5] },
-    { id: "FL", name: "Florida", zone: "yellow", g: [8, 7] },
+    { id: "UT", name: "Utah", zone: "yellow", m: [20, 20, 8, 10] },
+    { id: "CO", name: "Colorado", zone: "yellow", m: [29, 20, 11, 9] },
+    { id: "KS", name: "Kansas", zone: "yellow", m: [38, 26, 12, 6] },
+    { id: "MO", name: "Missouri", zone: "yellow", m: [50, 20, 9, 9] },
+    { id: "IL", name: "Illinois", zone: "yellow", m: [59, 14, 6, 10] },
+    { id: "OK", name: "Oklahoma", zone: "yellow", m: [39, 33, 12, 6] },
+    { id: "AR", name: "Arkansas", zone: "yellow", m: [52, 30, 8, 7] },
+    { id: "LA", name: "Louisiana", zone: "yellow", m: [52, 38, 8, 8] },
+    { id: "MS", name: "Mississippi", zone: "yellow", m: [61, 34, 6, 10] },
+    { id: "AL", name: "Alabama", zone: "yellow", m: [68, 34, 6, 10] },
+    { id: "GA", name: "Georgia", zone: "yellow", m: [75, 34, 8, 9] },
+    { id: "SC", name: "South Carolina", zone: "yellow", m: [80, 29, 8, 4] },
+    { id: "NC", name: "North Carolina", zone: "yellow", m: [75, 25, 14, 4] },
+    { id: "FL", name: "Florida", zone: "yellow", m: [77, 44, 13, 6] },
     // ---- FRONTLINE ----
-    { id: "AZ", name: "Arizona", zone: "orange", g: [2, 5] },
-    { id: "NM", name: "New Mexico", zone: "orange", g: [3, 5] },
+    { id: "AZ", name: "Arizona", zone: "orange", m: [13, 33, 10, 11] },
+    { id: "NM", name: "New Mexico", zone: "orange", m: [24, 33, 10, 11] },
     // ---- OVERRUN ----
-    { id: "TX", name: "Texas", zone: "red", g: [4, 6] },
-    { id: "IN", name: "Indiana", zone: "red", g: [6, 2] },
-    { id: "OH", name: "Ohio", zone: "red", g: [7, 2] },
-    { id: "KY", name: "Kentucky", zone: "red", g: [6, 3] },
-    { id: "WV", name: "West Virginia", zone: "red", g: [7, 3] },
-    { id: "TN", name: "Tennessee", zone: "red", g: [6, 4] },
+    { id: "TX", name: "Texas", zone: "red", m: [34, 40, 17, 14] },
+    { id: "IN", name: "Indiana", zone: "red", m: [66, 15, 5, 8] },
+    { id: "OH", name: "Ohio", zone: "red", m: [72, 14, 6, 7] },
+    { id: "KY", name: "Kentucky", zone: "red", m: [65, 24, 11, 4] },
+    { id: "WV", name: "West Virginia", zone: "red", m: [73, 21, 5, 4] },
+    { id: "TN", name: "Tennessee", zone: "red", m: [63, 29, 13, 4] },
     // ---- COLLAPSED EAST ----
-    { id: "ME", name: "Maine", zone: "darkred", g: [10, 0] },
-    { id: "NH", name: "New Hampshire", zone: "darkred", g: [10, 1] },
-    { id: "VT", name: "Vermont", zone: "darkred", g: [9, 1] },
-    { id: "MA", name: "Massachusetts", zone: "darkred", g: [10, 2] },
-    { id: "RI", name: "Rhode Island", zone: "darkred", g: [10, 4] },
-    { id: "CT", name: "Connecticut", zone: "darkred", g: [10, 3] },
-    { id: "NY", name: "New York (state)", zone: "darkred", g: [9, 2] },
-    { id: "NJ", name: "New Jersey", zone: "darkred", g: [9, 3] },
-    { id: "PA", name: "Pennsylvania", zone: "darkred", g: [8, 2] },
-    { id: "DE", name: "Delaware", zone: "darkred", g: [8, 4] },
-    { id: "MD", name: "Maryland", zone: "darkred", g: [8, 3] },
-    { id: "DC", name: "Washington D.C.", zone: "darkred", g: [9, 4] },
-    { id: "VA", name: "Virginia", zone: "darkred", g: [7, 4] },
+    { id: "ME", name: "Maine", zone: "darkred", m: [92, 0, 6, 9] },
+    { id: "NH", name: "New Hampshire", zone: "darkred", m: [89, 4, 3, 6] },
+    { id: "VT", name: "Vermont", zone: "darkred", m: [86, 4, 3, 6] },
+    { id: "MA", name: "Massachusetts", zone: "darkred", m: [87, 10, 8, 3] },
+    { id: "RI", name: "Rhode Island", zone: "darkred", m: [92, 13, 3, 3] },
+    { id: "CT", name: "Connecticut", zone: "darkred", m: [87, 13, 4, 3] },
+    { id: "NY", name: "New York (state)", zone: "darkred", m: [77, 6, 10, 7] },
+    { id: "NJ", name: "New Jersey", zone: "darkred", m: [88, 16, 3, 6] },
+    { id: "PA", name: "Pennsylvania", zone: "darkred", m: [78, 13, 10, 5] },
+    { id: "DE", name: "Delaware", zone: "darkred", m: [91, 22, 2, 4] },
+    { id: "MD", name: "Maryland", zone: "darkred", m: [80, 19, 8, 3] },
+    { id: "DC", name: "Washington D.C.", zone: "darkred", m: [84, 22, 2, 2] },
+    { id: "VA", name: "Virginia", zone: "darkred", m: [78, 22, 10, 4] },
     // ---- GRAY / UNRECOVERABLE ----
-    { id: "CA", name: "California (L.A. Mega-Outbreak)", zone: "gray", g: [1, 3] },
-    { id: "OR", name: "Oregon", zone: "gray", g: [1, 2] },
-    { id: "NV", name: "Nevada", zone: "gray", g: [2, 3] },
-    { id: "LI", name: "Long Island — Cut Off", zone: "gray", g: null },
+    { id: "CA", name: "California (L.A. Mega-Outbreak)", zone: "gray", m: [2, 20, 8, 16] },
+    { id: "OR", name: "Oregon", zone: "gray", m: [3, 11, 10, 8] },
+    { id: "NV", name: "Nevada", zone: "gray", m: [11, 20, 8, 12] },
+    { id: "LI", name: "Long Island — Cut Off", zone: "gray", m: null },
   ];
 
   const AREAS = {
     city: {
-      label: "City Center", knockMul: 0.75, horrorMul: 0.8,
-      desc: "Dense blocks: more people at your door, more noise, more of everything.",
+      label: "City Center", home: "apartment", knockMul: 0.75, horrorMul: 0.8,
+      desc: "A studio apartment over dense blocks: more people at your door, more noise, more of everything.",
     },
     suburb: {
-      label: "Suburbs", knockMul: 1.0, horrorMul: 1.0,
-      desc: "Your quiet street. The default nightmare.",
+      label: "Suburbs", home: "house", knockMul: 1.0, horrorMul: 1.0,
+      desc: "A family house on a quiet street of lawns and porch lights. The default nightmare.",
     },
     rural: {
-      label: "Rural Outskirts", knockMul: 1.4, horrorMul: 1.25,
-      desc: "Isolated. Fewer visitors — but no one will hear you, either.",
+      label: "Rural Outskirts", home: "farmhouse", knockMul: 1.4, horrorMul: 1.25,
+      desc: "A farmhouse alone among the fields. Fewer visitors — but no one will hear you, either.",
     },
   };
 
-  /* How each tier's tile color evolves with the NATIONAL phase 0..4. */
+  /* How each tier's map color evolves with the NATIONAL phase 0..4. */
   const STAGE_COLORS = {
     green:   ["#2e7d6b", "#2e7d6b", "#2e7d6b", "#2e7d6b", "#2e7d6b"],
     yellow:  ["#3f7a5a", "#3f7a5a", "#7f8f4a", "#e0c23c", "#e0c23c"],
@@ -134,22 +138,25 @@
     gray:    ["#3f7a5a", "#e0c23c", "#c05038", "#6b7076", "#6b7076"],
   };
 
-  // States that go PARTIALLY gray next to the gray zones (coastal WA,
-  // western AZ, northern NJ) once the collapse is advanced.
   const PARTIAL_GRAY = ["WA", "AZ", "NJ"];
 
-  // The four Safe-Guarded cities and the tiles they sit on.
   const CITIES = [
-    { label: "NYC", tile: "NY" },
-    { label: "DC",  tile: "DC" },
-    { label: "PHL", tile: "PA" },
-    { label: "BAL", tile: "MD" },
+    { label: "NYC", x: 87, y: 11 },
+    { label: "PHL", x: 88, y: 15 },
+    { label: "BAL", x: 84, y: 20 },
+    { label: "DC",  x: 85, y: 23 },
   ];
 
   const World = {
     ZONES, STATES, AREAS,
 
     byId(id) { return STATES.find((s) => s.id === id) || null; },
+
+    /** Local severity for a zone given the national phase. */
+    localPhase(zoneId, nationalPhase) {
+      const z = ZONES[zoneId] || ZONES.yellow;
+      return Math.max(0, Math.min(4, Math.floor(nationalPhase * z.speed + 1e-6)));
+    },
 
     /** Populate + wire the menu location picker. */
     initPicker(stateSel, areaSel, chipEl, descEl) {
@@ -181,10 +188,10 @@
     },
 
     /* ------------------------------------------------------------
-       drawMap — paint the live national situation map.
-       Renders a tile-grid cartogram of the US that darkens as the
-       national phase advances. Used by the computer MAP app and
-       the TV mini-map (any canvas size works).
+       drawMap — a real-shaped USA built from state blocks, over
+       ocean, with AK/HI insets. Darkens as the national phase
+       advances; Safe-Guarded cities, partial-gray creep and the
+       containment wall appear late. Any canvas size works.
        ------------------------------------------------------------ */
     drawMap(ctx, W, H, game) {
       const phase = Math.max(0, Math.min(4,
@@ -193,16 +200,33 @@
 
       ctx.save();
       ctx.imageSmoothingEnabled = false;
-      // background
-      ctx.fillStyle = "#0b0e15";
+
+      // ocean
+      const oc = ctx.createLinearGradient(0, 0, 0, H);
+      oc.addColorStop(0, "#0c1523");
+      oc.addColorStop(1, "#0a1019");
+      ctx.fillStyle = oc;
       ctx.fillRect(0, 0, W, H);
 
-      const small = W < 200; // TV mini-map mode
-      const headH = small ? 10 : 26;
-      const legendH = small ? 0 : 22;
-      const tile = Math.floor(Math.min(W / 11.6, (H - headH - legendH) / 8.4));
-      const ox = Math.floor((W - tile * 11) / 2);
-      const oy = headH + Math.floor((H - headH - legendH - tile * 8) / 2);
+      const small = W < 200;
+      const headH = small ? 9 : 24;
+      const legendH = small ? 0 : 20;
+      const sx = W / 100;
+      const sy = (H - headH - legendH) / 64;
+      const S = Math.min(sx, sy);
+      const ox = (W - S * 100) / 2;
+      const oy = headH;
+      const R = (m) => [ox + m[0] * S, oy + m[1] * S, m[2] * S, m[3] * S];
+
+      // faint lat/long lines for map texture
+      if (!small) {
+        ctx.strokeStyle = "rgba(120,150,190,0.06)";
+        ctx.lineWidth = 1;
+        for (let i = 1; i < 6; i++) {
+          ctx.beginPath(); ctx.moveTo(0, oy + i * 10 * S); ctx.lineTo(W, oy + i * 10 * S); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(ox + i * 16 * S, 0); ctx.lineTo(ox + i * 16 * S, H); ctx.stroke();
+        }
+      }
 
       // title
       ctx.fillStyle = phase >= 3 ? "#ff6f63" : "#9bf0ad";
@@ -215,62 +239,66 @@
         "COLLAPSE TRACKING — DAY " + day,
         "CONTAINMENT MAP — FINAL",
       ];
-      ctx.fillText(titles[phase], ox, small ? 1 : 6);
+      ctx.fillText(titles[phase], Math.max(4, ox), small ? 1 : 5);
 
-      // state tiles
+      // state blocks
       for (const st of STATES) {
-        if (!st.g) continue;
-        const x = ox + st.g[0] * tile;
-        const y = oy + st.g[1] * tile;
-        const w = tile - 2, h = tile - 2;
+        if (!st.m) continue;
+        const [x, y, w, h] = R(st.m);
         ctx.fillStyle = STAGE_COLORS[st.zone][phase];
         ctx.fillRect(x, y, w, h);
+        ctx.strokeStyle = "rgba(6,10,16,0.8)";
+        ctx.lineWidth = Math.max(1, S * 0.3);
+        ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
 
-        // partial gray creep on the borders of the gray zones
         if (phase >= 3 && PARTIAL_GRAY.indexOf(st.id) !== -1) {
           ctx.fillStyle = "#6b7076";
           ctx.beginPath();
-          ctx.moveTo(x, y);
-          ctx.lineTo(x + w, y);
-          ctx.lineTo(x, y + h);
-          ctx.closePath();
-          ctx.fill();
+          ctx.moveTo(x, y); ctx.lineTo(x + w, y); ctx.lineTo(x, y + h);
+          ctx.closePath(); ctx.fill();
         }
-
-        // containment wall around the gray zones
         if (phase >= 4 && st.zone === "gray") {
           ctx.strokeStyle = "#e8d44d";
-          ctx.lineWidth = Math.max(1, tile / 12);
-          ctx.setLineDash([3, 2]);
-          ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+          ctx.lineWidth = Math.max(1, S * 0.5);
+          ctx.setLineDash([S * 1.2, S * 0.8]);
+          ctx.strokeRect(x - 1, y - 1, w + 2, h + 2);
           ctx.setLineDash([]);
         }
-
-        if (!small && tile >= 14) {
+        // labels on blocks big enough
+        if (!small && w > 14 && h > 9) {
           ctx.fillStyle = "rgba(0,0,0,0.55)";
-          ctx.font = Math.max(6, Math.floor(tile / 3)) + "px monospace";
+          ctx.font = Math.max(6, Math.floor(S * 2.4)) + "px monospace";
           ctx.fillText(st.id, x + 2, y + 2);
+        }
+        // inset labels
+        if (!small && st.inset) {
+          ctx.fillStyle = "#6a7688";
+          ctx.font = "6px monospace";
+          ctx.fillText(st.inset, x, y + h + 2);
         }
       }
 
-      // the four Safe-Guarded cities
+      // inset divider
+      if (!small) {
+        ctx.strokeStyle = "rgba(120,150,190,0.25)";
+        ctx.setLineDash([3, 3]);
+        ctx.strokeRect(ox + 1 * S, oy + 44 * S, 30 * S, 15 * S);
+        ctx.setLineDash([]);
+      }
+
+      // Safe-Guarded cities
       if (phase >= 3) {
         for (const c of CITIES) {
-          const st = World.byId(c.tile);
-          if (!st || !st.g) continue;
-          const cx = ox + st.g[0] * tile + tile - 5;
-          const cy = oy + st.g[1] * tile + 3;
+          const cx = ox + c.x * S, cy = oy + c.y * S;
           ctx.fillStyle = "#39d98a";
-          ctx.beginPath();
-          ctx.arc(cx, cy, Math.max(2, tile / 8), 0, Math.PI * 2);
-          ctx.fill();
+          ctx.beginPath(); ctx.arc(cx, cy, Math.max(2, S * 0.9), 0, Math.PI * 2); ctx.fill();
           ctx.strokeStyle = "#0b0e15";
           ctx.lineWidth = 1;
           ctx.stroke();
-          if (!small && tile >= 16) {
+          if (!small) {
             ctx.fillStyle = "#39d98a";
-            ctx.font = "6px monospace";
-            ctx.fillText(c.label, cx - tile + 4, cy + 4);
+            ctx.font = "7px monospace";
+            ctx.fillText(c.label, cx + S, cy - S * 0.6);
           }
         }
       }
@@ -285,8 +313,8 @@
           ["#8a1a1e", "COLLAPSED"],
           ["#6b7076", "GRAY ZONE"],
         ];
-        let lx = ox;
-        const ly = oy + tile * 8 + 6;
+        let lx = Math.max(6, ox);
+        const ly = H - legendH + 5;
         ctx.font = "7px monospace";
         for (const [col, lab] of items) {
           ctx.fillStyle = col;

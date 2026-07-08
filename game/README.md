@@ -1,19 +1,25 @@
 # THE LONG NIGHT
 ### a 2D psychological-horror observation game
 
-You are an ordinary homeowner, alone, over the **three days** a zombie virus
-quietly tips over into a full outbreak. You cannot fight. You cannot run far.
-You can only **watch** — through your TV, your computer, your phone, and your
-windows — as a normal week curdles into catastrophe, and decide, knock by
-knock, who you let past your door.
+You are an ordinary homeowner, alone, across the **realistic day count** it
+takes a zombie virus to break a country: a normal Day 1, a curfew by Day 3,
+shelter-in-place by Day 5, martial law by Day 8, national collapse by Day 11.
+There is **no fixed number of nights** — you survive day after day, managing
+food and sleep and nerves, until a *real* way out finally knocks. You cannot
+fight. You can only **watch** — through your TV, your computer, and your
+windows — and decide, knock by knock, who you let past your door.
 
 Before you start, you **choose where you live**: any of the 50 states (plus
 Washington D.C., the NYC Fortress, and cut-off Long Island), each assigned to
 a zone tier from the national situation map — **Green Safe Zone, Strained,
 Frontline, Overrun, Collapsed East, or Gray Zone (Unrecoverable)** — and an
-area: City Center, Suburbs, or Rural Outskirts. Your choice changes
-everything: how bad things already are, how often the knocks come, how hard
-the finale hits, and *who* is out there. In the Gray Zones there is no
+area — and the area decides your **home**: a studio apartment downtown, a
+family house in the Suburbs, or a farmhouse alone in the fields (each with its
+own interior and its own view outside the glass: skyline, a street of
+neighbors' houses, or barn-and-windmill farmland — all of it deteriorating in
+its own way as the outbreak advances). Every run starts on a perfectly normal
+Day 1; your zone's *speed* decides how early the collapse reaches your street
+— Gray Zones fall days ahead of the news, Green fortresses never fully fall. In the Gray Zones there is no
 government left at all — militias reinforce your door, gangs collect tolls
 for the district wall, and helicopter strike waves burn the clusters a few
 blocks away.
@@ -103,8 +109,13 @@ Walk up to a fixture and a prompt tells you what you can do.
   outbreak map that darkens as events progress), **Virus Report** (CDC/FEMA
   sitreps), **Emergency Alerts**, and **Social** (a feed that slowly goes
   silent). Unread counts show on every tile.
-* **Sleep in the bed** to skip ahead 2–3 broadcast events — you wake to a
-  changed world and a computer full of notifications.
+* **Sleep in the bed** at night (or when exhausted) to skip to next morning —
+  you wake to a changed world, fresh notifications, and sometimes new scratches
+  on the outside of the door.
+* **Look through the peephole** any time you're at the door. Usually the porch
+  is empty. Usually.
+* **Eat every day.** Your basket holds 8 meals; hunger stacks stress fast.
+  Some visitors bring food. Some take it.
 * **Cook breakfast** at the kitchenette (`C`): a finite supply of eggs,
   chicken, and toast that calms your nerves and burns off fatigue.
 * **Peer through the windows** to see what's really happening outside.
@@ -124,18 +135,18 @@ arrives.
 
 ## Endings
 
-There are **seven** ways it can end:
+The game is open-ended: it goes on until you reach an ending. From **Day 12**
+onward, real ways out start knocking. The endings:
 
-* **DAWN** — you simply survive until the dawn of the third day.
-* **EXTRACTED** — you correctly trust a real evacuation team.
-* **THE COMPOUND** — in a Gray Zone, you go with the district militia.
+* **EXTRACTED** *(good)* — you correctly trust a real evacuation team.
+* **THE COMPOUND** *(good)* — in a Gray Zone, you go with the district militia.
 * **PROCESSED** — you open the door to soldiers under the containment sweep.
 * **TURNED** — you let something infected inside your walls.
-* **THE LONGEST NIGHT** — your stress meter maxes out and your mind gives way.
-* **BREACHED** — the finale arrives and your barricades weren't enough.
+* **THE LONGEST NIGHT** — stress (or hunger) maxes out and your mind gives way.
+* **BREACHED** — your barricades weren't enough when the dark finally pushed.
 
-Your choices, your barricades, and how well you managed your nerves decide
-which one you get.
+How many days you lasted is your score. Your choices, your barricades, your
+meals and your nerves decide how it ends.
 
 ---
 

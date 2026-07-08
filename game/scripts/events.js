@@ -493,9 +493,9 @@
         delivery: {
           sprite: "person", color: "#6a5030",
           title: "A DELIVERY DRIVER",
-          desc: "A tired-looking courier holds up a package. 'Late shift, sorry. Sign here?' Everything about it is completely, boringly ordinary.",
-          yes: { stress: -3, message: "You sign for the package. A moment of normalcy. It helps, a little." },
-          no: { stress: +3, message: "You wave them off through the peephole. They shrug and leave the box on the step." },
+          desc: "A tired-looking courier holds up a box of groceries. 'Late shift, sorry. Sign here?' Everything about it is completely, boringly ordinary.",
+          yes: { stress: -3, supplies: +2, message: "You sign for the groceries — eggs, bread, a chicken. A moment of normalcy, and a fuller basket." },
+          no: { stress: +3, message: "You wave them off through the peephole. They shrug and leave the box on the step, where you'll never quite dare to fetch it." },
         },
         neighbor: {
           sprite: "person", color: "#3a6a4a",
@@ -567,7 +567,7 @@
         sprite: "soldier", color: "#4a543c",
         title: "A NATIONAL GUARD SOLDIER",
         desc: "A young soldier, visor up, looks exhausted. 'Sir/ma'am, martial law is in effect. Stay inside, lights off, away from the windows. Do NOT open this door again tonight — not for anyone. Understood?'",
-        yes: { stress: -3, message: "You crack the door. He repeats his warning, presses a ration bar into your hand, and moves on. Small mercy." },
+        yes: { stress: -3, supplies: +1, message: "You crack the door. He repeats his warning, presses a ration pack into your hand, and moves on. Small mercy." },
         no: { stress: +2, message: "You answer through the door. 'Smart,' he says. 'Keep it that way.' His footsteps fade." },
       };
       return this._wrap(v, "soldier");
@@ -589,7 +589,7 @@
         sprite: "person", color: "#333a44",
         title: "A CREW FROM THE NEXT BLOCK",
         desc: "Four figures with bandanas and a shopping cart full of scrap. 'Toll time, neighbor. Everybody on this street chips in for the wall — food, tools, batteries. Open up and pay, or we remember your door.'",
-        yes: { stress: +8, risk: 0.12, message: "You crack the door and hand over canned food and your spare batteries. One of them actually writes it in a ledger. 'Wall's getting taller,' he says. Protection has a price now." },
+        yes: { stress: +8, supplies: -2, risk: 0.12, message: "You crack the door and hand over eggs, cans, and your spare batteries. One of them actually writes it in a ledger. 'Wall's getting taller,' he says. Protection has a price now." },
         no: { stress: +9, damage: 1, message: "You keep it shut. A bat cracks against a barricade plank — once, twice — and then they move on. They'll remember your door." },
       };
       return this._wrap(v, "person");
@@ -631,6 +631,7 @@
           }
           if (out.damage) game.damageBarricade("door", out.damage);
           if (out.repair) game.barricades.door = Math.min(3, game.barricades.door + out.repair);
+          if (out.supplies && game.addSupplies) game.addSupplies(out.supplies);
           return res;
         },
       };

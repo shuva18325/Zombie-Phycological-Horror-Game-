@@ -98,7 +98,7 @@
     /* ---------------- HUD ---------------- */
     refreshHUD(game) {
       this.el.clock.textContent = game.clockString();
-      this.el.dayChip.textContent = "DAY " + game.day + "/3";
+      this.el.dayChip.textContent = "DAY " + game.day;
       if (game.zone) {
         this.el.locChip.textContent = game.stateName + " · " + game.area.label;
         this.el.locChip.style.borderLeftColor = game.zone.color;
@@ -627,10 +627,17 @@
       }
     },
 
-    /* ---------------- Door modal ---------------- */
-    openDoor(game, visitor) {
+    /* ---------------- Door modal (knock decision OR free peek) ---------------- */
+    openDoor(game, visitor, peek) {
       this.el.doorTitle.textContent = visitor.title;
       this.el.doorDesc.textContent = visitor.desc;
+      const yes = document.getElementById("door-yes");
+      const no = document.getElementById("door-no");
+      const back = document.getElementById("door-back");
+      yes.classList.toggle("hidden", !!peek);
+      no.classList.toggle("hidden", !!peek);
+      back.classList.toggle("hidden", !peek);
+      this.el.doorTimer.classList.toggle("hidden", !!peek);
       this.el.doorTimer.innerHTML = '<div id="door-timer-bar"></div>';
       this.doorBar = document.getElementById("door-timer-bar");
       ZH.Renderer.drawPeephole(this.peepCtx, visitor, game);
@@ -660,8 +667,8 @@
       this.el.endingStats.innerHTML =
         (game.stateName ? "Location: " + game.stateName + " · " + game.area.label +
           " · " + game.zone.label + "<br>" : "") +
-        "You held out until <b>DAY " + game.day + " · " + game.clockString() + "</b><br>" +
-        "Time survived: " + mm + ":" + ss + "<br>" +
+        "<b>Days survived: " + game.day + "</b> (until " + game.clockString() + ")<br>" +
+        "Real time: " + mm + ":" + ss + "<br>" +
         "Final stress: " + Math.round(game.player.stress) + "%<br>" +
         "Doors answered: " + game.stats.doorsAnswered +
         " &nbsp;·&nbsp; Opened: " + game.stats.doorsOpened + "<br>" +
