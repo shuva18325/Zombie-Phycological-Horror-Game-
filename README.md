@@ -26,7 +26,7 @@ of contents.
 | [8. Progression & Tech Tree](docs/08-progression-tech-tree.md) | Four eras, full upgrade trees |
 | [9. Events System](docs/09-events.md) | Full event tables |
 | [10. AI Competitors](docs/10-ai-competitors.md) | Personalities & behavior tables |
-| 11. *Reserved* | [Intentionally blank](docs/11-reserved.md) — owner's section |
+| [11. Connections](docs/11-social-connections.md) | Business / Love / Family social system + Wife NPC |
 | [12. Win & Loss Conditions](docs/12-win-loss.md) | Victory routes & failure states |
 | [13. Formulas](docs/13-formulas.md) | Full simulation math spec |
 | [Appendix A — Resources](docs/appendix-a-resources.md) | Resource tables |

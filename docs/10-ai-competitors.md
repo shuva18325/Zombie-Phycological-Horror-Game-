@@ -155,4 +155,4 @@ Each AI starts symmetric‑ish to the player but seeded to its identity:
 | Opportunistic corp | Edge of map, room to grow | \$650 | Reactive expansion |
 
 ---
-[← Events](09-events.md) · [Next: (Reserved) §11 →](11-reserved.md)
+[← Events](09-events.md) · [Next: Connections →](11-social-connections.md)

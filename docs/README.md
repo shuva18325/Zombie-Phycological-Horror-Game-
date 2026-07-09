@@ -27,7 +27,7 @@ The document follows the requested section numbering. Section 11 is intentionall
 | 8 | Progression & Tech Tree | [`08-progression-tech-tree.md`](08-progression-tech-tree.md) |
 | 9 | Events System | [`09-events.md`](09-events.md) |
 | 10 | AI Competitors | [`10-ai-competitors.md`](10-ai-competitors.md) |
-| 11 | *Reserved (blank — owner’s section)* | [`11-reserved.md`](11-reserved.md) |
+| 11 | Connections (Business / Love / Family) | [`11-social-connections.md`](11-social-connections.md) |
 | 12 | Win & Loss Conditions | [`12-win-loss.md`](12-win-loss.md) |
 | 13 | Formulas | [`13-formulas.md`](13-formulas.md) |
 | A | Appendix A — Resource Tables | [`appendix-a-resources.md`](appendix-a-resources.md) |
@@ -87,5 +87,5 @@ These constants are referenced throughout the document. Tune here first.
 
 ---
 
-*Section 11 is intentionally omitted from the content and reserved for the
-document owner (see [`11-reserved.md`](11-reserved.md)).*
+*Section 11 defines the **Connections** social system — Business, Love, and
+Family relationships (see [`11-social-connections.md`](11-social-connections.md)).*

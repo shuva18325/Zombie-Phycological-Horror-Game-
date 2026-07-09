@@ -93,4 +93,4 @@ pill (T‑Finance), or simply never IPO (trade cash growth for safety).
 (cozy audience); **New Game+** carries a Legacy Perk (mastery audience, Appendix G).
 
 ---
-[← (Reserved) §11](11-reserved.md) · [Next: Formulas →](13-formulas.md)
+[← Connections](11-social-connections.md) · [Next: Formulas →](13-formulas.md)
