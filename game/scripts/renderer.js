@@ -22,6 +22,7 @@
     door: "assets/sprites/door.png",
     helicopter: "assets/sprites/helicopter.png",
     soldier: "assets/sprites/soldier.png",
+    player_slum: "assets/sprites/player_slum.png",
   };
 
   // The two window panes (glass areas).
@@ -887,48 +888,73 @@
       ctx.fillStyle = "#8a8d92";
       ctx.fillRect(kit.fx + 34, kit.fy + 42, 7, 7);     // chai pot
 
-      /* the bed — wooden, thin mattress, gingham sheet */
+      /* the bed — a proper charpai: dark wood frame, thick mattress,
+         printed red-and-gold bedsheet, two pillows, folded quilt */
+      ctx.fillStyle = "rgba(0,0,0,0.22)";
+      ctx.fillRect(bed.fx - 2, bed.fy + bed.fh - 5, bed.fw + 8, 6);
+      // frame
+      ctx.fillStyle = "#5e3c20";
+      ctx.fillRect(bed.fx - 4, bed.fy - 2, bed.fw + 8, bed.fh);
+      // carved headboard (top)
       ctx.fillStyle = "#7a4c26";
-      ctx.fillRect(bed.fx - 3, bed.fy - 7, 5, 52);
-      ctx.fillRect(bed.fx - 3, bed.fy - 7, bed.fw + 6, 5);
-      ctx.fillStyle = "#8a5a2e";
-      ctx.fillRect(bed.fx, bed.fy, bed.fw, 6);
-      ctx.fillStyle = "#e8e0c0";
-      ctx.fillRect(bed.fx, bed.fy + 5, bed.fw, 42);
-      ctx.fillStyle = "rgba(200,170,60,0.55)";
-      for (let gy2 = 0; gy2 < 6; gy2++) {
-        for (let gx2 = 0; gx2 < 9; gx2++) {
-          if ((gx2 + gy2) % 2 === 0) {
-            ctx.fillRect(bed.fx + gx2 * 7.4, bed.fy + 5 + gy2 * 7, 7.4, 7);
-          }
+      ctx.fillRect(bed.fx - 4, bed.fy - 12, bed.fw + 8, 12);
+      ctx.fillStyle = "#8a5a30";
+      ctx.fillRect(bed.fx - 1, bed.fy - 10, bed.fw + 2, 3);
+      ctx.fillStyle = "#5e3c20";
+      for (let x = bed.fx + 4; x < bed.fx + bed.fw; x += 12) ctx.fillRect(x, bed.fy - 9, 2, 7);
+      // mattress
+      ctx.fillStyle = "#e6dcc4";
+      ctx.fillRect(bed.fx, bed.fy, bed.fw, bed.fh - 6);
+      ctx.fillStyle = "rgba(0,0,0,0.10)";
+      ctx.fillRect(bed.fx, bed.fy, 3, bed.fh - 6);       // shaded side
+      // printed bedsheet (lower two-thirds)
+      ctx.fillStyle = "#9a2430";
+      ctx.fillRect(bed.fx + 2, bed.fy + 22, bed.fw - 4, bed.fh - 32);
+      ctx.fillStyle = "#c9a13b";
+      for (let py = bed.fy + 28; py < bed.fy + bed.fh - 12; py += 12) {
+        for (let px = bed.fx + 8; px < bed.fx + bed.fw - 6; px += 14) {
+          ctx.fillRect(px, py + 2, 3, 3);
+          ctx.fillRect(px + 3, py, 3, 3);
+          ctx.fillRect(px + 6, py + 2, 3, 3);
+          ctx.fillRect(px + 3, py + 4, 3, 3);
         }
       }
-      ctx.fillStyle = "#c05a2e";
-      ctx.fillRect(bed.fx + bed.fw - 18, bed.fy + 5, 18, 42);
-      ctx.fillStyle = "#e8a020";
-      for (let i = 0; i < 4; i++) {
-        ctx.fillRect(bed.fx + bed.fw - 18, bed.fy + 8 + i * 10, 18, 3);
-      }
-      ctx.fillStyle = "#f0ece0";
-      ctx.fillRect(bed.fx + 3, bed.fy + 7, 18, 10);
-      ctx.fillStyle = "#6e4222";
-      ctx.fillRect(bed.fx, bed.fy + 47, 4, 12);
-      ctx.fillRect(bed.fx + bed.fw - 4, bed.fy + 47, 4, 12);
-      ctx.fillStyle = "#8a7350";
-      ctx.fillRect(bed.fx + 8, bed.fy + 49, 18, 10);
-      ctx.fillStyle = "#7d8792";
-      ctx.fillRect(bed.fx + 32, bed.fy + 51, 20, 8);
+      ctx.fillStyle = "#e8d44d";
+      ctx.fillRect(bed.fx + 2, bed.fy + bed.fh - 12, bed.fw - 4, 3); // gold hem
+      // two pillows at the head
+      ctx.fillStyle = "#f4f0e6";
+      this._roundRect(ctx, bed.fx + 4, bed.fy + 3, 26, 15, 4);
+      this._roundRect(ctx, bed.fx + 34, bed.fy + 3, 26, 15, 4);
+      ctx.strokeStyle = "#d8d1c0";
+      ctx.strokeRect(bed.fx + 5.5, bed.fy + 4.5, 23, 12);
+      ctx.strokeRect(bed.fx + 35.5, bed.fy + 4.5, 23, 12);
+      // legs
+      ctx.fillStyle = "#4e3018";
+      ctx.fillRect(bed.fx - 3, bed.fy + bed.fh - 4, 5, 8);
+      ctx.fillRect(bed.fx + bed.fw - 2, bed.fy + bed.fh - 4, 5, 8);
+      // a sleeping housemate lies wrapped here when sick / at night
       const sick = (game.housemates || []).find((h) => h.status === "sick");
       if (sick) {
         ctx.fillStyle = "#c05a2e";
-        ctx.fillRect(bed.fx + 18, bed.fy + 8, 34, 13);
+        ctx.fillRect(bed.fx + 16, bed.fy + 26, 40, 14);
         ctx.fillStyle = sick.skin;
-        ctx.fillRect(bed.fx + 11, bed.fy + 10, 8, 8);
+        ctx.fillRect(bed.fx + 9, bed.fy + 8, 9, 9);
         ctx.fillStyle = "#181410";
-        ctx.fillRect(bed.fx + 10, bed.fy + 8, 10, 4);
+        ctx.fillRect(bed.fx + 8, bed.fy + 6, 11, 4);
         const br = Math.sin(this.t * 3) * 0.7;
         ctx.fillStyle = "rgba(255,255,255,0.10)";
-        ctx.fillRect(bed.fx + 18, bed.fy + 8 + br, 34, 2);
+        ctx.fillRect(bed.fx + 16, bed.fy + 26 + br, 40, 2);
+      }
+
+      /* rolled bedrolls for the others, stacked against the corner */
+      for (let i = 0; i < 3; i++) {
+        const ry = 214 + i * 9;
+        ctx.fillStyle = ["#3a6a8a", "#8a5a3a", "#7a3a5a"][i];
+        this._roundRect(ctx, 150, ry, 26, 7, 3);
+        ctx.fillStyle = "rgba(0,0,0,0.18)";
+        ctx.fillRect(150, ry + 4, 26, 3);
+        ctx.fillStyle = "rgba(255,255,255,0.12)";
+        ctx.fillRect(151, ry + 1, 24, 1);
       }
 
       /* the one small window */
@@ -1030,6 +1056,11 @@
         if (i === 1) {
           ctx.fillStyle = "#c9cdd2";
           ctx.fillRect(hx + 9, hy + 5 + bob, 3, 4);
+        }
+        // ambient speech bubble
+        const ch = game.chatter;
+        if (ch && ch.i === i && game.timeElapsed < ch.until) {
+          this._bubble(ctx, hx + 5, hy - 10 + bob, ch.text);
         }
       }
       // low chowki with steel tins
@@ -1860,6 +1891,157 @@
         }
         ctx.globalAlpha = 1;
       }
+    },
+
+    _roundRect(ctx, x, y, w, h, r) {
+      r = Math.min(r, w / 2, h / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+      ctx.fill();
+    },
+
+    _bubble(ctx, cx, topY, text) {
+      ctx.font = "6px monospace";
+      const w = Math.max(14, ctx.measureText(text).width + 8);
+      const x = Math.max(2, Math.min(this.W - w - 2, cx - w / 2));
+      const y = Math.max(2, topY - 12);
+      ctx.fillStyle = "rgba(248,246,240,0.95)";
+      this._roundRect(ctx, x, y, w, 11, 3);
+      ctx.beginPath();                       // little tail
+      ctx.moveTo(cx - 2, y + 11); ctx.lineTo(cx + 2, y + 11); ctx.lineTo(cx, y + 14);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "#1a1a20";
+      ctx.textBaseline = "top";
+      ctx.fillText(text, x + 4, y + 2);
+    },
+
+    /* ------------------------------------------------------------
+       First-person SLEEP / WAKE. k = eyelids-closed fraction (0 open,
+       1 shut). Draws the room seen from your pillow — your friends
+       still up across the room — then the lids drift down over it.
+       ------------------------------------------------------------ */
+    drawSleep(lctx, W, H, game, k, waking) {
+      lctx.imageSmoothingEnabled = false;
+      const slum = this._theme(game).slum;
+      const warm = waking ? 1 : (1 - k * 0.55);
+
+      // ---- the room, from the bed ----
+      // ceiling
+      lctx.fillStyle = slum ? "#3a2f28" : "#20222c";
+      lctx.fillRect(0, 0, W, H * 0.32);
+      if (slum) {
+        lctx.strokeStyle = "rgba(0,0,0,0.3)";
+        for (let x = 0; x < W; x += 16) { lctx.beginPath(); lctx.moveTo(x, 0); lctx.lineTo(x, H * 0.32); lctx.stroke(); }
+        // the bulb, glowing
+        const bulbG = lctx.createRadialGradient(W / 2, H * 0.16, 4, W / 2, H * 0.16, 90 * warm);
+        bulbG.addColorStop(0, "rgba(255,233,160," + (0.9 * warm) + ")");
+        bulbG.addColorStop(1, "rgba(255,233,160,0)");
+        lctx.fillStyle = bulbG;
+        lctx.fillRect(0, 0, W, H * 0.4);
+        lctx.fillStyle = "#ffe9a0";
+        lctx.beginPath(); lctx.arc(W / 2, H * 0.16, 6, 0, Math.PI * 2); lctx.fill();
+      }
+      // far wall
+      lctx.fillStyle = slum ? this._rgb(this._mix([50, 110, 122], [10, 20, 24], 1 - warm))
+                            : this._rgb(this._mix([60, 64, 74], [10, 12, 18], 1 - warm));
+      lctx.fillRect(0, H * 0.32, W, H * 0.34);
+      // floor
+      lctx.fillStyle = slum ? this._rgb(this._mix([120, 112, 100], [20, 18, 15], 1 - warm))
+                            : this._rgb(this._mix([120, 96, 60], [18, 14, 10], 1 - warm));
+      lctx.fillRect(0, H * 0.66, W, H * 0.34);
+
+      // ---- friends across the room, still awake ----
+      const mates = (game.housemates || []).filter((h) => h.status === "well");
+      if (slum && mates.length) {
+        // a mat
+        lctx.fillStyle = this._rgb(this._mix([106, 122, 82], [20, 24, 16], 1 - warm));
+        lctx.fillRect(W * 0.28, H * 0.6, W * 0.44, H * 0.16);
+        for (let i = 0; i < mates.length; i++) {
+          const hm = mates[i];
+          const hx = W * 0.32 + i * (W * 0.11);
+          const hy = H * 0.6;
+          const play = Math.sin(this.t * 3 + i * 1.3) * 2;   // gesturing, laughing
+          lctx.fillStyle = this._rgb(this._mix(this._hex(hm.shirt), [10, 10, 12], 1 - warm));
+          lctx.fillRect(hx, hy - 20 + play, 14, 20);
+          lctx.fillStyle = this._rgb(this._mix(this._hex(hm.skin), [10, 10, 12], 1 - warm));
+          lctx.fillRect(hx + 3, hy - 30 + play, 9, 9);
+          lctx.fillStyle = "#120f0c";
+          lctx.fillRect(hx + 2, hy - 33 + play, 11, 4);
+        }
+        // a goodnight bubble from one of them, before your eyes close
+        if (!waking && k < 0.55) {
+          this._bubbleBig(lctx, W * 0.36, H * 0.5, "so jao, yaar 🙂", warm);
+        }
+        if (waking) {
+          this._bubbleBig(lctx, W * 0.5, H * 0.5, "uth! chai's ready ☕", warm);
+        }
+      } else {
+        // US homes: just the dim shape of the room + a screen glow
+        lctx.fillStyle = "rgba(120,200,140," + (0.10 * warm) + ")";
+        lctx.fillRect(W * 0.05, H * 0.4, W * 0.2, H * 0.18);
+      }
+
+      // heavy vignette
+      const vg = lctx.createRadialGradient(W / 2, H / 2, H * 0.25, W / 2, H / 2, H * 0.8);
+      vg.addColorStop(0, "rgba(0,0,0,0)");
+      vg.addColorStop(1, "rgba(0,0,0,0.7)");
+      lctx.fillStyle = vg;
+      lctx.fillRect(0, 0, W, H);
+
+      // wake blur: a soft double-vision that resolves as eyes open
+      if (waking && k > 0.15) {
+        lctx.globalAlpha = k * 0.4;
+        lctx.fillStyle = "rgba(180,190,200,0.5)";
+        lctx.fillRect(0, 0, W, H);
+        lctx.globalAlpha = 1;
+      }
+
+      // ---- the eyelids ----
+      const lid = k * (H * 0.52);
+      lctx.fillStyle = "#000";
+      // top lid with a curved lash edge
+      lctx.beginPath();
+      lctx.moveTo(0, 0); lctx.lineTo(W, 0); lctx.lineTo(W, lid);
+      lctx.quadraticCurveTo(W / 2, lid + 14, 0, lid);
+      lctx.closePath(); lctx.fill();
+      // bottom lid
+      lctx.beginPath();
+      lctx.moveTo(0, H); lctx.lineTo(W, H); lctx.lineTo(W, H - lid);
+      lctx.quadraticCurveTo(W / 2, H - lid - 14, 0, H - lid);
+      lctx.closePath(); lctx.fill();
+      // lash line highlight
+      if (k > 0.05 && k < 0.98) {
+        lctx.strokeStyle = "rgba(40,30,26,0.8)";
+        lctx.lineWidth = 2;
+        lctx.beginPath();
+        lctx.moveTo(0, lid); lctx.quadraticCurveTo(W / 2, lid + 14, W, lid);
+        lctx.stroke();
+        lctx.lineWidth = 1;
+      }
+    },
+
+    _bubbleBig(ctx, cx, cy, text, warm) {
+      ctx.font = "13px monospace";
+      const w = ctx.measureText(text).width + 16;
+      const x = cx - w / 2, y = cy - 10;
+      ctx.fillStyle = "rgba(248,246,240," + (0.5 + 0.45 * (warm || 1)) + ")";
+      this._roundRect(ctx, x, y, w, 22, 6);
+      ctx.beginPath();
+      ctx.moveTo(cx - 4, y + 22); ctx.lineTo(cx + 4, y + 22); ctx.lineTo(cx, y + 28);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "#1a1a20";
+      ctx.textBaseline = "top";
+      ctx.fillText(text, x + 8, y + 5);
+    },
+
+    _hex(h) {
+      const n = parseInt(h.slice(1), 16);
+      return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
     },
 
     /* ------------------------------------------------------------

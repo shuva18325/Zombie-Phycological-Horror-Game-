@@ -744,6 +744,21 @@
       document.getElementById("screen-lookout").classList.add("hidden");
     },
 
+    /* ---------------- First-person SLEEP / WAKE ---------------- */
+    openSleep(game) {
+      const el = document.getElementById("screen-sleep");
+      el.classList.remove("hidden");
+      this.tickSleep(game, 0, false);
+    },
+    tickSleep(game, k, waking) {
+      const canvas = document.getElementById("sleep-canvas");
+      if (!canvas) return;
+      ZH.Renderer.drawSleep(canvas.getContext("2d"), canvas.width, canvas.height, game, k, waking);
+    },
+    closeSleep() {
+      document.getElementById("screen-sleep").classList.add("hidden");
+    },
+
     /* ---------------- Door modal (knock decision OR free peek) ---------------- */
     openDoor(game, visitor, peek) {
       this.el.doorTitle.textContent = visitor.title;

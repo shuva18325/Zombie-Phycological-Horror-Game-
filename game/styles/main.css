@@ -703,3 +703,18 @@ html, body {
   width: 34px; height: 34px; border-radius: 5px; cursor: pointer; font-size: 16px;
 }
 .mute-btn:hover { background: rgba(30,36,46,0.9); }
+
+
+/* ===================== First-person sleep / wake ===================== */
+.sleep-screen {
+  position: absolute;
+  inset: 0;
+  z-index: 58;
+  background: #000;
+}
+#sleep-canvas {
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  display: block;
+}

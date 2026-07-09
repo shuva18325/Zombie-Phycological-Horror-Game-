@@ -37,7 +37,18 @@ cordon → the discovery: **the polluted water and air KILL the virus.** Dead
 infected float down the Mithi river; only the trash-adapted **kachra walkers**
 survive, rising from the heaps. Hold the lane to Day 16 and you win a unique
 ending — **THE LANE HOLDS** — or leave with everyone at once when the lorries
-come (**THE LANE LEAVES TOGETHER**).
+come (**THE LANE LEAVES TOGETHER**). The four
+housemates are **real people**: they chatter and joke on the mat (which melts
+your stress far faster than anything in America), one can catch a fever you
+must decide how to treat, and in a breach one may throw themselves between you
+and the dark to save your life. **Chotu** runs side-quests between houses
+(feed the boy, get medicine, boards, or a hand-delivered newspaper) until the
+cordon pulls him safely indoors. A **monsoon** night floods the lane and
+washes the walkers out of the heaps. Texting anyone gives **context-aware
+replies** that warm up the more you talk. Sleeping plays a **first-person**
+lie-down: you watch your friends still up, your eyelids drift shut, and you
+wake to a changed morning. Progress **auto-saves** — a **CONTINUE** button
+resumes your night.
 
 Your four friends are **real characters**: they catch fevers (tend them
 yourself, or send them to the aunty sick-room — with no clinic, every call is

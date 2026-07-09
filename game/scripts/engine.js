@@ -427,47 +427,74 @@
         g.toast("It's the middle of the day and you're too wired. Maybe after dark — or once you're truly exhausted.");
         return;
       }
-
-      g.modal = "day";
+      // first-person: lie down, watch the others, eyes drift shut
+      g.modal = "sleeping";
       g.sleptTonight = true;
-      ZH.UI.showDayCard("YOU SLEEP", "Dark. Dreamless. The world does not wait for you.");
-      setTimeout(() => {
-        if (g !== this.game) return;
-        // jump to 08:00 next morning
-        g.timeElapsed = g.day * DAY_LENGTH + 0.01;
+      g.sleepSeq = { stage: "falling", t: 0, skipped: false };
+      ZH.Audio.blip();
+      ZH.UI.hidePrompt();
+      ZH.UI.openSleep(g);
+    },
 
-        // the night was not necessarily quiet
-        if (g.phase >= 3 && Math.random() < 0.45) {
-          const which = Math.random() < 0.5 ? "door" : "window";
-          if (g.barricades[which] > 0) {
-            g.damageBarricade(which, 1);
-            g.toast("Something tested the " + which + " while you slept. A plank is split.");
-          } else {
-            g.player.addStress(10);
-            g.toast("There are new scratches on the outside of the " + which + ". You slept through it.");
-          }
+    updateSleep(dt) {
+      const g = this.game, sq = g.sleepSeq;
+      if (!sq) { g.modal = "none"; return; }
+      sq.t += dt;
+      const FALL = 2.6, RISE = 2.0;
+      if (sq.stage === "falling") {
+        const k = Math.min(1, sq.t / FALL);
+        ZH.UI.tickSleep(g, k, false);
+        if (k >= 1 && !sq.skipped) {
+          sq.skipped = true;
+          this._nightSkip();          // the world moves on while you're under
+          sq.stage = "rising"; sq.t = 0;
         }
-
-        // catch the broadcasts you slept through (quietly)
-        const realToast = g.toast;
-        g.toast = function () {};
-        const np = phaseForDay(Math.floor(g.timeElapsed / DAY_LENGTH) + 1);
-        if (np > g.nationalPhase) this.setNationalPhase(np, true);
-        for (let i = 0; i < 40; i++) {
-          if (g.tvStage >= g.timelineRef.length - 1) break;
-          if (g.timeElapsed < g.nextTvAt) break;
-          this.updateTV(0);
+      } else {
+        const k = Math.max(0, 1 - sq.t / RISE);
+        ZH.UI.tickSleep(g, k, true);
+        if (k <= 0) {
+          ZH.UI.closeSleep();
+          g.sleepSeq = null;
+          if (g.modal === "sleeping") g.modal = "none";
         }
-        g.toast = realToast;
+      }
+    },
 
-        g.nextKnockAt = Math.max(g.nextKnockAt, g.timeElapsed + 10);
-        g.nextHorrorAt = Math.max(g.nextHorrorAt, g.timeElapsed + 6);
-        g.player.addFatigue(-60);
-        g.player.addStress(-5);
-        g.sleptRecently = 30;
-        ZH.UI.hideDayCard();
-        if (g.modal === "day") g.modal = "none";
-      }, 2400);
+    _nightSkip() {
+      const g = this.game;
+      g.timeElapsed = g.day * DAY_LENGTH + 0.01;   // jump to 08:00 next morning
+
+      if (g.phase >= 3 && Math.random() < 0.45) {
+        const which = Math.random() < 0.5 ? "door" : "window";
+        if (g.barricades[which] > 0) {
+          g.damageBarricade(which, 1);
+          g.toast("Something tested the " + which + " while you slept. A plank is split.");
+        } else if (g.zoneId === "slum" && g.presentMates().length) {
+          g.toast("You wake to the watch already on your step — the others heard the scratching and never woke you.");
+        } else {
+          g.player.addStress(10);
+          g.toast("There are new scratches on the outside of the " + which + ". You slept through it.");
+        }
+      }
+
+      // catch the broadcasts you slept through (quietly)
+      const realToast = g.toast;
+      g.toast = function () {};
+      const np = phaseForDay(Math.floor(g.timeElapsed / DAY_LENGTH) + 1);
+      if (np > g.nationalPhase) this.setNationalPhase(np, true);
+      for (let i = 0; i < 40; i++) {
+        if (g.tvStage >= g.timelineRef.length - 1) break;
+        if (g.timeElapsed < g.nextTvAt) break;
+        this.updateTV(0);
+      }
+      g.toast = realToast;
+
+      g.nextKnockAt = Math.max(g.nextKnockAt, g.timeElapsed + 10);
+      g.nextHorrorAt = Math.max(g.nextHorrorAt, g.timeElapsed + 6);
+      g.player.addFatigue(-60);
+      g.player.addStress(-5);
+      g.sleptRecently = 30;
+      this.saveGame();
     },
 
     checkDoor() {
@@ -681,6 +708,7 @@
       if (g.gameOver) return;
       g.gameOver = true;
       g.running = false;
+      this.clearSave();
       ZH.Audio.stopTvStatic();
       ZH.Audio.siren(false);
       ZH.Audio.setTension(0);
@@ -748,6 +776,8 @@
         return;
       }
 
+      this.chotuArc();
+      this.saveGame();
       const flavor = DAY_FLAVOR[Math.min(4, phaseForDay(g.day))] +
         (g.day >= RESCUE_DAY && g.phase >= 3
           ? " Listen for the knock — some of them are real ways out now."
@@ -880,6 +910,8 @@
           ZH.UI.updateDoorPeephole(g, g.currentPeek);
         } else if (g.modal === "lookout") {
           ZH.UI.tickLookout(g);
+        } else if (g.modal === "sleeping") {
+          this.updateSleep(dt);
         } else if (g.modal === "choice") {
           if (g.currentChoice) ZH.UI.updateDoorPeephole(g, g.currentChoice);
         } else if (g.modal === "day") {
@@ -955,6 +987,7 @@
       this.updateHorror(dt);
       this.updateKnocks(dt);
       this.updateBreach(dt);
+      this.updateChatter(dt);
 
       if (p.stress > 0 && g.phase <= 1 && !g.flags.night) p.addStress(-dt * 0.35);
     },
@@ -1077,6 +1110,95 @@
       }
     },
 
+    // Ambient life: your housemates chatter, joke and reassure you.
+    updateChatter(dt) {
+      const g = this.game;
+      if (g.zoneId !== "slum") return;
+      if (g.chatterAt == null) g.chatterAt = g.timeElapsed + 5;
+      if (g.timeElapsed < g.chatterAt) return;
+      const mates = g.presentMates();
+      if (!mates.length) { g.chatterAt = g.timeElapsed + 8; return; }
+      const pools = [
+        ["arre, your turn!", "chai?", "haan haan 😄", "one more game!", "Sharma-ji's rooster again 🐓", "who took my slipper"],
+        ["masks tomorrow, ok?", "you ate today?", "cricket score check", "stay in, na"],
+        ["we're fine, na?", "boil the water", "don't go near the window", "watch shift at 6"],
+        ["nobody sleeps alone.", "hold on, yaar.", "the water protects us 🙏", "we're together"],
+        ["almost dawn.", "still here. all of us.", "breathe. we've got you.", "🖤"],
+      ];
+      const pool = pools[Math.min(4, g.phase)];
+      const i = Math.floor(Math.random() * mates.length);
+      // map to seat index in the room (present order)
+      const seatIdx = g.housemates.filter((h) => h.status === "well").indexOf(mates[i]);
+      g.chatter = { i: Math.max(0, seatIdx), text: pool[Math.floor(Math.random() * pool.length)], until: g.timeElapsed + 3.6 };
+      g.chatterAt = g.timeElapsed + 6 + Math.random() * 5;
+    },
+
+    // Chotu's arc — the lane's boy courier can't run once the cordon
+    // clamps down. A quiet, hopeful beat, not a cruel one.
+    chotuArc() {
+      const g = this.game;
+      if (g.zoneId !== "slum" || g.chotuArcFired) return;
+      if (g.phase < 4) return;
+      g.chotuArcFired = true;
+      g.toast("No knock from Chotu today. For the first time, the lane's errands go undone.");
+      if (g.threads.galli) {
+        g.threads.galli.push({ who: "them", text: "Ravi: watch pulled Chotu inside — too dangerous out there for a boy now. he's safe with the aunties. driving them crazy, obviously 🙂" });
+        g.threadUnread.galli = true; g.unread.messages++;
+      }
+      g.flags.chotuSafe = true;
+    },
+
+    /* ------------------------------------------------------------
+       Save / continue (localStorage) — long runs survive a closed tab
+       ------------------------------------------------------------ */
+    saveGame() {
+      const g = this.game;
+      if (!g || g.gameOver) return;
+      try {
+        const save = {
+          v: 1, stateId: g.stateId, areaId: g.areaId,
+          day: g.day, dayShown: g.dayShown, hour: g.hour, timeElapsed: g.timeElapsed,
+          nationalPhase: g.nationalPhase, phase: g.phase, orderIndex: g.orderIndex, det: g.det,
+          tvStage: g.tvStage, tvView: g.tvView, nextTvAt: g.nextTvAt,
+          computerAlerts: g.computerAlerts, threads: g.threads, threadUnread: g.threadUnread,
+          unread: g.unread, supplies: g.supplies, ateToday: g.ateToday, hungerStreak: g.hungerStreak,
+          rescueKnocks: g.rescueKnocks, housemates: g.housemates,
+          nextSicknessDay: g.nextSicknessDay, monsoonDay: g.monsoonDay, nextQuestAt: g.nextQuestAt,
+          papersHave: g.papersHave, bond: g.bond, barricades: g.barricades, flags: g.flags,
+          firedOnce: g.firedOnce, stats: g.stats, chotuArcFired: g.chotuArcFired,
+          nextHorrorAt: g.nextHorrorAt, nextKnockAt: g.nextKnockAt, nextBreachCheck: g.nextBreachCheck,
+          stress: g.player.stress, fatigue: g.player.fatigue,
+        };
+        localStorage.setItem("thelongnight_save_v1", JSON.stringify(save));
+      } catch (e) {}
+    },
+
+    hasSave() {
+      try { return !!localStorage.getItem("thelongnight_save_v1"); } catch (e) { return false; }
+    },
+
+    clearSave() {
+      try { localStorage.removeItem("thelongnight_save_v1"); } catch (e) {}
+    },
+
+    continueGame() {
+      let save;
+      try { save = JSON.parse(localStorage.getItem("thelongnight_save_v1")); } catch (e) { return false; }
+      if (!save || save.v !== 1) return false;
+      const st = ZH.World.byId(save.stateId) || ZH.World.byId("KS");
+      this.newGame({ state: st, areaId: save.areaId });
+      const g = this.game;
+      const skip = { v: 1, stateId: 1, areaId: 1, stress: 1, fatigue: 1 };
+      for (const k in save) { if (!skip[k]) g[k] = save[k]; }
+      g.player.stress = save.stress; g.player.fatigue = save.fatigue;
+      g.dayShown = g.day;   // don't replay a day-card on resume
+      ZH.Audio.init(); ZH.Audio.resume(); ZH.Audio.startAmbience();
+      ZH.UI.clearToasts(); ZH.UI.hideMenu(); ZH.UI.hideEnding(); ZH.UI.showHUD();
+      g.running = true;
+      g.toast("You pick up where you left off — Day " + g.day + ".");
+      return true;
+    },
+
     /* ------------------------------------------------------------
        DOM wiring & input
        ------------------------------------------------------------ */
@@ -1084,6 +1206,14 @@
       const g = () => this.game;
 
       document.getElementById("start-btn").addEventListener("click", () => this.startGame());
+      const cont = document.getElementById("continue-btn");
+      if (cont) {
+        cont.classList.toggle("hidden", !this.hasSave());
+        cont.addEventListener("click", () => this.continueGame());
+      }
+      window.addEventListener("visibilitychange", () => {
+        if (document.hidden && this.game && this.game.running) this.saveGame();
+      });
       document.getElementById("restart-btn").addEventListener("click", () => {
         ZH.UI.hideEnding();
         ZH.UI.hideHUD();
