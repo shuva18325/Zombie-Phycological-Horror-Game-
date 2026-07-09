@@ -136,8 +136,9 @@ HQ hex gains a **Farmhouse**) and becomes an active presence in the sim.
 ![Della, the Wife NPC — white cowboy hat, blonde bob, red plaid tied shirt, denim shorts, standing before a red barn and the COUNTY FARM sign](assets/wife-character.png)
 
 *Rendered from a self‑contained SVG model → PNG (see
-[`assets/wife-character.html`](assets/wife-character.html)). Cozy‑game cartoon
-styling.*
+[`assets/wife-character.html`](assets/wife-character.html)). The **same model
+powers the playable prototype**, where you can actually talk to her —
+[▶ play it](https://claude.ai/code/artifact/500a9dbc-4568-4654-8693-ab83c6d6cd4b).*
 
 | Attribute | Design |
 |-----------|--------|

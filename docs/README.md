@@ -8,6 +8,10 @@
 This repository contains the **complete design specification** for **HexWorld Tycoon**:
 mechanics, systems, formulas, UI, progression, economy, and world simulation.
 
+> ▶️ **[Play the browser prototype](https://claude.ai/code/artifact/500a9dbc-4568-4654-8693-ab83c6d6cd4b)** — a working vertical slice
+> (hex map, build, connect, market, Della) in a single self-contained file:
+> [`game/hexworld-tycoon.html`](../game/hexworld-tycoon.html).
+
 ---
 
 ## 📚 Table of Contents

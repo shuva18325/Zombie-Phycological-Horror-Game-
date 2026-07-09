@@ -9,6 +9,17 @@
 
 ---
 
+## ▶️ Play it now
+
+**[▶ Play HexWorld Tycoon in your browser](https://claude.ai/code/artifact/500a9dbc-4568-4654-8693-ab83c6d6cd4b)** — no install, no setup.
+
+Build farms/mines, upgrade the roads until the lines glow **green**, sell on a
+live market, chat with **Della** for a morale boost, and grow one dirt‑road hex
+into a **$25,000** empire. Source: [`game/hexworld-tycoon.html`](game/hexworld-tycoon.html)
+(a single self‑contained file — open it locally and it just runs).
+
+---
+
 ## 📖 Read the full design document
 
 The complete GDD lives in [`docs/`](docs/README.md) — start there for the table

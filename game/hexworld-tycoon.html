@@ -1,0 +1,738 @@
+<title>HexWorld Tycoon</title>
+<style>
+  :root{
+    --soil:#241a10; --ink:#3a2c1c;
+    --ground:#efdcae; --card:#fbf3df; --card-2:#f4e8ca; --line:#d8c39a;
+    --barn:#b6402f; --barn-d:#933122; --gold:#e8b23a; --pasture:#5f8a3f;
+    --denim:#4a72a8; --muted:#8a795c;
+    --red:#c0563f; --amber:#d8a53a; --green:#5f8a3f;
+    --shadow:0 2px 0 #d8c39a, 0 10px 24px rgba(60,40,16,.16);
+    --radius:14px;
+    --fdisplay:Georgia,"Iowan Old Style","Times New Roman",serif;
+    --fui:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --soil:#f3e7cf; --ink:#e9dcc0;
+      --ground:#1c1712; --card:#2a2117; --card-2:#221a12; --line:#4a3a26;
+      --card:#2a2117; --muted:#b39d78;
+      --shadow:0 2px 0 #1a140d, 0 12px 26px rgba(0,0,0,.5);
+    }
+  }
+  :root[data-theme="dark"]{
+      --soil:#f3e7cf; --ink:#e9dcc0; --ground:#1c1712; --card:#2a2117;
+      --card-2:#221a12; --line:#4a3a26; --muted:#b39d78;
+      --shadow:0 2px 0 #1a140d, 0 12px 26px rgba(0,0,0,.5);
+  }
+  :root[data-theme="light"]{
+      --soil:#241a10; --ink:#3a2c1c; --ground:#efdcae; --card:#fbf3df;
+      --card-2:#f4e8ca; --line:#d8c39a; --muted:#8a795c;
+      --shadow:0 2px 0 #d8c39a, 0 10px 24px rgba(60,40,16,.16);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    font-family:var(--fui); color:var(--soil);
+    background:
+      radial-gradient(1200px 600px at 15% -10%, rgba(232,178,58,.18), transparent 60%),
+      radial-gradient(900px 500px at 110% 120%, rgba(95,138,63,.18), transparent 60%),
+      var(--ground);
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{max-width:1180px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;gap:12px;padding:12px}
+  button{font-family:var(--fui);cursor:pointer}
+  .btn{border:1.5px solid var(--ink);background:var(--card);color:var(--soil);
+    padding:7px 12px;border-radius:10px;font-weight:600;font-size:13px;
+    box-shadow:0 2px 0 var(--line); transition:transform .05s, background .15s}
+  .btn:hover{background:var(--card-2)}
+  .btn:active{transform:translateY(2px);box-shadow:none}
+  .btn:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
+  .btn.primary{background:var(--barn);color:#fff;border-color:var(--barn-d);box-shadow:0 2px 0 var(--barn-d)}
+  .btn.primary:hover{background:var(--barn-d)}
+  .btn.gold{background:var(--gold);border-color:#b9861f;color:#3a2c0c;box-shadow:0 2px 0 #b9861f}
+  .btn:focus-visible{outline:3px solid var(--denim);outline-offset:2px}
+
+  /* HUD */
+  .hud{display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+    background:linear-gradient(180deg,var(--card),var(--card-2));
+    border:1.5px solid var(--line);border-radius:var(--radius);padding:10px 14px;box-shadow:var(--shadow)}
+  .brand{display:flex;flex-direction:column;line-height:1}
+  .brand b{font-family:var(--fdisplay);font-size:20px;letter-spacing:.5px}
+  .brand small{color:var(--muted);letter-spacing:2px;text-transform:uppercase;font-size:9px;margin-top:2px}
+  .stats{display:flex;gap:16px;flex-wrap:wrap;margin-left:auto;align-items:center}
+  .stat{display:flex;flex-direction:column;align-items:flex-start;min-width:64px}
+  .stat .k{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)}
+  .stat .v{font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
+  .stat .v.good{color:var(--pasture)} .stat .v.bad{color:var(--barn)}
+  .speed{display:flex;gap:4px;align-items:center;background:var(--ground);border-radius:10px;padding:3px}
+  .speed button{border:none;background:transparent;color:var(--soil);font-weight:700;
+    width:34px;height:28px;border-radius:7px;font-size:12px}
+  .speed button.on{background:var(--barn);color:#fff}
+  .theme-btn{border:1.5px solid var(--line);background:var(--card);border-radius:10px;width:34px;height:32px;font-size:15px}
+
+  /* Board */
+  .board{display:grid;grid-template-columns:1fr 320px;gap:12px;flex:1;min-height:0}
+  @media(max-width:860px){.board{grid-template-columns:1fr}}
+  .mapwrap{position:relative;background:
+      repeating-linear-gradient(90deg, rgba(120,90,40,.05) 0 2px, transparent 2px 26px),
+      radial-gradient(700px 500px at 50% 40%, rgba(120,150,80,.16), transparent 70%),
+      var(--card);
+    border:1.5px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);
+    overflow:hidden;display:flex;align-items:center;justify-content:center;min-height:420px}
+  #map{max-width:100%;height:auto;touch-action:none}
+  .maplegend{position:absolute;left:10px;bottom:10px;display:flex;gap:10px;
+    background:rgba(0,0,0,.32);color:#fff;padding:6px 10px;border-radius:9px;font-size:11px;backdrop-filter:blur(3px)}
+  .maplegend span{display:flex;align-items:center;gap:4px}
+  .dot{width:10px;height:10px;border-radius:3px;display:inline-block}
+
+  .side{display:flex;flex-direction:column;gap:12px;min-height:0}
+  .panel{background:var(--card);border:1.5px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:12px;overflow:auto}
+  .panel h3{margin:0 0 8px;font-family:var(--fdisplay);font-size:15px;display:flex;align-items:center;gap:7px}
+  .panel h3 .tag{margin-left:auto;font-family:var(--fui);font-size:10px;letter-spacing:1px;
+    text-transform:uppercase;color:var(--muted)}
+  .kv{display:flex;justify-content:space-between;font-size:12.5px;padding:3px 0;border-bottom:1px dashed var(--line)}
+  .kv b{font-variant-numeric:tabular-nums}
+  .actions{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+  .hint{font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:8px}
+  .state-pill{font-size:10px;font-weight:800;letter-spacing:.5px;padding:2px 8px;border-radius:999px;color:#fff}
+
+  /* Market */
+  .mrow{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;
+    padding:6px 0;border-bottom:1px dashed var(--line)}
+  .mrow .nm{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600}
+  .mrow .pr{font-variant-numeric:tabular-nums;text-align:right;font-weight:700;min-width:64px}
+  .mrow .pr small{color:var(--muted);font-weight:500;display:block;font-size:10px}
+  .arrow.up{color:var(--pasture)} .arrow.dn{color:var(--barn)}
+  .sellbtn{border:1.5px solid var(--ink);background:var(--card-2);border-radius:8px;padding:4px 8px;font-size:11px;font-weight:700}
+  .sellbtn:disabled{opacity:.35}
+
+  /* objective */
+  .status{display:flex;align-items:center;gap:14px;background:var(--card);border:1.5px solid var(--line);
+    border-radius:var(--radius);padding:8px 14px;box-shadow:var(--shadow);flex-wrap:wrap}
+  .obj{font-size:12.5px}
+  .obj b{color:var(--barn)}
+  .bar{flex:1;min-width:140px;height:12px;background:var(--ground);border-radius:999px;overflow:hidden;border:1px solid var(--line)}
+  .bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),var(--pasture));transition:width .4s}
+  .log{font-size:11.5px;color:var(--muted);margin-left:auto;max-width:340px;text-align:right}
+
+  /* Della */
+  .della-btn{display:flex;align-items:center;gap:8px;border:1.5px solid var(--barn-d);
+    background:var(--barn);color:#fff;border-radius:12px;padding:5px 12px 5px 6px;font-weight:700;box-shadow:0 2px 0 var(--barn-d)}
+  .della-btn:active{transform:translateY(2px);box-shadow:none}
+  .della-btn .av{width:34px;height:34px;border-radius:9px;overflow:hidden;background:#f6cfa0;flex:none;border:1.5px solid #fff}
+  .della-btn .av svg{width:100%;height:auto;display:block;transform:translateY(2px) scale(1.35);transform-origin:top center}
+
+  /* Modals */
+  .scrim{position:fixed;inset:0;background:rgba(30,20,8,.55);display:none;align-items:center;justify-content:center;padding:16px;z-index:50}
+  .scrim.on{display:flex}
+  .modal{background:var(--card);border:1.5px solid var(--line);border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,.4);
+    max-width:560px;width:100%;overflow:hidden}
+  .modal-hd{font-family:var(--fdisplay);font-size:20px;padding:14px 18px;border-bottom:1.5px solid var(--line);
+    display:flex;align-items:center;gap:10px}
+  .modal-bd{padding:16px 18px;display:flex;gap:16px}
+  .portrait{width:180px;flex:none;background:
+      radial-gradient(120px 120px at 50% 30%, rgba(232,178,58,.35), transparent 70%),
+      linear-gradient(180deg,#f6e7c6,#e9d7ad);
+    border:1.5px solid var(--line);border-radius:14px;overflow:hidden;align-self:flex-start}
+  .portrait svg{width:100%;height:auto;display:block}
+  .dtext{flex:1;display:flex;flex-direction:column}
+  .speech{font-size:15px;line-height:1.55;min-height:96px}
+  .speech .who{font-family:var(--fdisplay);color:var(--barn);font-weight:700;display:block;margin-bottom:4px}
+  .choices{display:flex;flex-direction:column;gap:7px;margin-top:12px}
+  .buffpill{display:inline-flex;align-items:center;gap:5px;background:var(--pasture);color:#fff;
+    font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px}
+  .end-emoji{font-size:40px}
+  @media(max-width:520px){.modal-bd{flex-direction:column;align-items:center}.portrait{width:150px}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="app">
+  <header class="hud">
+    <div class="brand"><b>HexWorld Tycoon</b><small>Farm · Extract · Connect · Trade</small></div>
+    <div class="stats">
+      <div class="stat"><span class="k">Cash</span><span class="v" id="s-cash">$500</span></div>
+      <div class="stat"><span class="k">Net Worth</span><span class="v good" id="s-nw">$1,050</span></div>
+      <div class="stat"><span class="k">Workers</span><span class="v" id="s-work">5</span></div>
+      <div class="stat"><span class="k">Day</span><span class="v" id="s-day">1</span></div>
+      <div class="stat"><span class="k">Della</span><span class="v" id="s-buff">+8%</span></div>
+      <div class="speed" role="group" aria-label="Game speed">
+        <button data-sp="0" title="Pause">⏸</button>
+        <button data-sp="1" class="on">1×</button>
+        <button data-sp="2">2×</button>
+        <button data-sp="4">4×</button>
+      </div>
+      <button class="theme-btn" id="themeBtn" title="Toggle day/dusk">🌙</button>
+    </div>
+  </header>
+
+  <div class="board">
+    <div class="mapwrap">
+      <canvas id="map" width="600" height="560" aria-label="Hex map"></canvas>
+      <div class="maplegend">
+        <span><i class="dot" style="background:#c0563f"></i>weak</span>
+        <span><i class="dot" style="background:#d8a53a"></i>ok</span>
+        <span><i class="dot" style="background:#5f8a3f"></i>strong</span>
+        <span>· click a hex</span>
+      </div>
+    </div>
+    <div class="side">
+      <div class="panel" id="hexPanel" style="flex:0 0 auto">
+        <h3>🧭 <span id="hp-title">Select a hex</span><span class="tag" id="hp-own"></span></h3>
+        <div id="hp-body"><p class="hint">Click any hexagon on the map to inspect it, then build, connect, or claim it. Start by building a <b>Crop Farm</b> on your Homestead.</p></div>
+      </div>
+      <div class="panel" id="marketPanel" style="flex:1 1 auto">
+        <h3>📈 Market <span class="tag">sell your goods</span></h3>
+        <div id="market"></div>
+        <div style="display:flex;gap:6px;margin-top:10px">
+          <button class="btn" id="hireBtn">👷 Hire worker · $60</button>
+          <button class="btn" id="sellAllBtn">💰 Sell all</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="status">
+    <div class="obj">Goal: reach <b id="goalTxt">$25,000</b> net worth &nbsp;·&nbsp; <span id="objSub">grow the homestead into an empire</span></div>
+    <div class="bar"><i id="goalBar"></i></div>
+    <button class="della-btn" id="dellaBtn"><span class="av" id="dellaAv"></span>Talk to Della</button>
+    <div class="log" id="log">Welcome to the homestead.</div>
+  </div>
+</div>
+
+<!-- Della dialogue -->
+<div class="scrim" id="dellaScrim" role="dialog" aria-modal="true" aria-label="Talk to Della">
+  <div class="modal">
+    <div class="modal-hd">🤠 Della <span id="dbuff"></span></div>
+    <div class="modal-bd">
+      <div class="portrait" id="dellaPortrait"></div>
+      <div class="dtext">
+        <div class="speech"><span class="who">Della</span><span id="dspeech">Well howdy, sugar. What's on your mind?</span></div>
+        <div class="choices" id="dchoices"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- End screen -->
+<div class="scrim" id="endScrim" role="dialog" aria-modal="true">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-hd"><span class="end-emoji" id="endEmoji">🏆</span> <span id="endTitle">You did it!</span></div>
+    <div class="modal-bd" style="flex-direction:column">
+      <p id="endBody" style="font-size:15px;line-height:1.6;margin:0"></p>
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button class="btn primary" onclick="location.reload()">Play again</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Intro -->
+<div class="scrim on" id="introScrim" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-hd">🌾 Welcome to HexWorld Tycoon</div>
+    <div class="modal-bd">
+      <div class="portrait" id="introPortrait" style="width:150px"></div>
+      <div class="dtext">
+        <div class="speech" style="min-height:auto">
+          <span class="who">Della</span>
+          You start with one <b>Homestead</b> hex, $500 and five farmhands. Here's the trick, darlin':
+          <ul style="margin:10px 0;padding-left:18px;font-size:13.5px;line-height:1.5">
+            <li><b>Build</b> on a hex to make goods.</li>
+            <li><b>Connect</b> it — a red line is choked, upgrade the road until it's <b style="color:#5f8a3f">green</b>.</li>
+            <li><b>Sell</b> on the market, then <b>claim</b> more land.</li>
+            <li>Come <b>talk to me</b> for a morale boost anytime.</li>
+          </ul>
+          Get our net worth to <b>$25,000</b> and we've made it.
+        </div>
+        <div class="choices"><button class="btn primary" id="startBtn">Let's get to work →</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ============================ DELLA PORTRAIT (expressive bust) ============================ */
+function dellaSVG(mood){
+  mood = mood||'happy';
+  // eyes
+  const eyeOpen = (cx)=>`<ellipse cx="${cx}" cy="150" rx="15" ry="17" fill="#fff" stroke="#8a5a30" stroke-width="2"/>
+     <circle cx="${cx+2}" cy="153" r="8.5" fill="#5a86c2"/><circle cx="${cx+2}" cy="153" r="4" fill="#20140a"/>
+     <circle cx="${cx-1}" cy="149" r="2" fill="#fff"/>`;
+  const eyeHappy = (cx)=>`<path d="M${cx-14} 154 q14 -16 28 0" fill="none" stroke="#20140a" stroke-width="4" stroke-linecap="round"/>`;
+  const eyeWide = (cx)=>`<ellipse cx="${cx}" cy="149" rx="16" ry="20" fill="#fff" stroke="#8a5a30" stroke-width="2"/>
+     <circle cx="${cx+1}" cy="151" r="8" fill="#5a86c2"/><circle cx="${cx+1}" cy="151" r="3.6" fill="#20140a"/>
+     <circle cx="${cx-2}" cy="147" r="2" fill="#fff"/>`;
+  let eyes, mouth, brows, blush=0.42, extra='';
+  if(mood==='love'){
+    eyes = eyeHappy(360)+eyeHappy(438);
+    mouth = `<path d="M372 196 q26 22 54 0" fill="none" stroke="#8a3a2a" stroke-width="5" stroke-linecap="round"/>
+             <path d="M376 198 q23 14 46 0" fill="#fff"/>`;
+    brows = `<path d="M346 128 q14 -8 28 -2" fill="none" stroke="#b98a2a" stroke-width="4" stroke-linecap="round"/>
+             <path d="M424 126 q14 -6 28 2" fill="none" stroke="#b98a2a" stroke-width="4" stroke-linecap="round"/>`;
+    blush=0.7;
+    extra = `<path d="M470 120 q8 -12 16 0 q-8 6 -16 14 q-8 -8 -16 -14 q8 -12 16 0" fill="#e07a86"/>`; // little heart
+  } else if(mood==='think'){
+    eyes = eyeOpen(360)+eyeOpen(438);
+    mouth = `<path d="M378 198 q22 6 42 -6" fill="none" stroke="#8a3a2a" stroke-width="5" stroke-linecap="round"/>`;
+    brows = `<path d="M346 122 q14 -4 28 4" fill="none" stroke="#b98a2a" stroke-width="4" stroke-linecap="round"/>
+             <path d="M424 116 q14 -10 28 -2" fill="none" stroke="#b98a2a" stroke-width="4" stroke-linecap="round"/>`;
+    blush=0.3;
+  } else if(mood==='surprised'){
+    eyes = eyeWide(360)+eyeWide(438);
+    mouth = `<ellipse cx="399" cy="200" rx="13" ry="16" fill="#8a3a2a"/><ellipse cx="399" cy="205" rx="8" ry="8" fill="#c0563f"/>`;
+    brows = `<path d="M344 118 q16 -10 30 -4" fill="none" stroke="#b98a2a" stroke-width="4" stroke-linecap="round"/>
+             <path d="M424 114 q16 -6 30 4" fill="none" stroke="#b98a2a" stroke-width="4" stroke-linecap="round"/>`;
+    blush=0.35;
+  } else { // happy / neutral
+    eyes = eyeOpen(360)+eyeOpen(438);
+    mouth = `<path d="M374 194 q25 20 52 0" fill="none" stroke="#8a3a2a" stroke-width="5" stroke-linecap="round"/>
+             <path d="M378 196 q23 12 44 0" fill="#fff"/>`;
+    brows = `<path d="M346 126 q14 -8 28 -2" fill="none" stroke="#b98a2a" stroke-width="4" stroke-linecap="round"/>
+             <path d="M424 124 q14 -6 28 2" fill="none" stroke="#b98a2a" stroke-width="4" stroke-linecap="round"/>`;
+  }
+  return `<svg viewBox="0 0 800 360" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="pk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f6cda6"/><stop offset="1" stop-color="#e7b184"/></linearGradient>
+      <linearGradient id="ph" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f4cd55"/><stop offset="1" stop-color="#c98f22"/></linearGradient>
+      <linearGradient id="ppl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d84636"/><stop offset="1" stop-color="#b32f24"/></linearGradient>
+    </defs>
+    <!-- shoulders + tied plaid shirt (bust) -->
+    <path d="M250 360 C250 300 300 262 340 258 C380 254 420 254 460 258 C500 262 550 300 550 360 Z" fill="url(#ppl)" stroke="#7d1f16" stroke-width="3"/>
+    <g clip-path="url(#torso)"></g>
+    <clipPath id="torso"><path d="M250 360 C250 300 300 262 340 258 C420 254 500 262 550 360 Z"/></clipPath>
+    <g clip-path="url(#torso)">
+      ${(()=>{let s='';for(let x=250;x<560;x+=26)s+=`<rect x="${x}" y="255" width="8" height="120" fill="#9c2b20" opacity="0.5"/>`;for(let y=258;y<380;y+=26)s+=`<rect x="250" y="${y}" width="310" height="8" fill="#9c2b20" opacity="0.5"/>`;return s;})()}
+    </g>
+    <!-- collar V -->
+    <path d="M360 268 L399 320 L438 268 L422 260 L399 300 L376 260 Z" fill="#c53b2c" stroke="#7d1f16" stroke-width="2"/>
+    <circle cx="399" cy="330" r="3.6" fill="#f0d8a0" stroke="#9a7a24" stroke-width="1"/>
+    <circle cx="399" cy="352" r="3.6" fill="#f0d8a0" stroke="#9a7a24" stroke-width="1"/>
+    <!-- neck -->
+    <path d="M372 238 C372 268 384 282 399 284 C414 282 426 268 426 238 C410 232 388 232 372 238 Z" fill="url(#pk)" stroke="#8a5a30" stroke-width="3"/>
+    <!-- hair back -->
+    <path d="M318 120 C300 210 306 268 344 300 C332 240 332 176 346 140 Z" fill="url(#ph)" stroke="#a9781e" stroke-width="2"/>
+    <path d="M480 120 C498 210 492 268 454 300 C466 240 466 176 452 140 Z" fill="url(#ph)" stroke="#a9781e" stroke-width="2"/>
+    <!-- head -->
+    <path d="M330 128 C330 82 362 58 399 58 C436 58 468 82 468 128 C468 176 442 210 399 214 C356 210 330 176 330 128 Z" fill="url(#pk)" stroke="#8a5a30" stroke-width="3"/>
+    <ellipse cx="330" cy="142" rx="10" ry="15" fill="#f0be93" stroke="#8a5a30" stroke-width="2"/>
+    <ellipse cx="468" cy="142" rx="10" ry="15" fill="#f0be93" stroke="#8a5a30" stroke-width="2"/>
+    <!-- blush -->
+    <ellipse cx="356" cy="176" rx="15" ry="8" fill="#f0a0a0" opacity="${blush}"/>
+    <ellipse cx="442" cy="176" rx="15" ry="8" fill="#f0a0a0" opacity="${blush}"/>
+    <!-- nose -->
+    <path d="M399 162 q6 10 -2 16" fill="none" stroke="#dda877" stroke-width="3" stroke-linecap="round"/>
+    ${eyes}${brows}${mouth}${extra}
+    <!-- side hair sweeps (kept off the face) -->
+    <path d="M330 128 C322 190 330 250 350 282 C346 236 344 186 352 150 C344 150 336 142 330 128 Z" fill="url(#ph)" stroke="#a9781e" stroke-width="1.5"/>
+    <path d="M468 128 C476 190 468 250 448 282 C452 236 454 186 446 150 C454 150 462 142 468 128 Z" fill="url(#ph)" stroke="#a9781e" stroke-width="1.5"/>
+    <path d="M340 118 C368 100 430 100 458 118 C440 136 414 130 399 126 C384 130 358 136 340 118 Z" fill="url(#ph)" stroke="#a9781e" stroke-width="1.5"/>
+    <!-- white cowboy hat + black band -->
+    <ellipse cx="399" cy="100" rx="132" ry="34" fill="#ffffff" stroke="#cfc9bd" stroke-width="4"/>
+    <path d="M340 100 C338 52 372 32 399 32 C426 32 460 52 458 100 C430 82 366 82 340 100 Z" fill="#ffffff" stroke="#cfc9bd" stroke-width="4"/>
+    <path d="M342 96 C368 82 430 82 456 96 C454 106 454 106 454 108 C430 96 366 96 344 108 Z" fill="#2a2a2a"/>
+    <rect x="392" y="92" width="14" height="11" rx="2" fill="#3a3a3a"/>
+  </svg>`;
+}
+
+/* ============================ GAME DATA ============================ */
+const TERR = {
+  home:   {name:'Homestead',color:'#d9c07a',icon:'🏡',res:'crops',out:3,bcost:120,bname:'Crop Farm',workers:2,maint:6},
+  farm:   {name:'Farmland', color:'#cdd884',icon:'🌾',res:'crops',out:3,bcost:120,bname:'Crop Farm',workers:2,maint:6},
+  forest: {name:'Forest',   color:'#82ae63',icon:'🌲',res:'timber',out:3,bcost:150,bname:'Logging Camp',workers:3,maint:6},
+  oil:    {name:'Oil Field',color:'#7a7488',icon:'🛢️',res:'crude',out:2.2,bcost:300,bname:'Oil Drill',workers:4,maint:14},
+  mineral:{name:'Mineral',  color:'#b7a488',icon:'⛏️',res:'ore',out:2.6,bcost:260,bname:'Ore Mine',workers:4,maint:12},
+  water:  {name:'Water',    color:'#8fc4d8',icon:'💧',res:'water',out:3.4,bcost:130,bname:'Pump Station',workers:2,maint:5},
+  rock:   {name:'Quarry',   color:'#c3b49a',icon:'🪨',res:'stone',out:3.4,bcost:110,bname:'Quarry',workers:3,maint:5},
+};
+const RES = {
+  crops:{name:'Crops',icon:'🌾',base:4}, timber:{name:'Timber',icon:'🪵',base:5},
+  crude:{name:'Crude',icon:'🛢️',base:14}, ore:{name:'Ore',icon:'⛏️',base:12},
+  water:{name:'Water',icon:'💧',base:3}, stone:{name:'Stone',icon:'🪨',base:6},
+};
+const TIERS = [
+  {name:'Dirt road', cap:4,  base:0.42, up:0,   next:250},
+  {name:'Paved road',cap:10, base:0.72, up:250, next:700},
+  {name:'Rail line', cap:20, base:1.00, up:700, next:0},
+];
+const GOAL = 25000;
+
+/* ============================ STATE ============================ */
+let G, ctx, canvas, size=32, ORIGIN={x:0,y:0}, selected=null, rafPending=false;
+
+function seeded(s){return function(){s=(s*9301+49297)%233280;return s/233280;};}
+
+function axialKey(q,r){return q+','+r;}
+function neighbors(q,r){return [[1,0],[1,-1],[0,-1],[-1,0],[-1,1],[0,1]].map(d=>[q+d[0],r+d[1]]);}
+
+function newGame(){
+  const rng=seeded(Date.now()%99991);
+  const hexes={}; const R=3;
+  const terrPool=['farm','farm','farm','forest','forest','oil','mineral','mineral','water','water','rock','rock'];
+  for(let q=-R;q<=R;q++)for(let r=-R;r<=R;r++){
+    if(Math.max(Math.abs(q),Math.abs(r),Math.abs(q+r))>R) continue;
+    let terr = terrPool[Math.floor(rng()*terrPool.length)];
+    const dist=Math.max(Math.abs(q),Math.abs(r),Math.abs(q+r));
+    hexes[axialKey(q,r)]={q,r,terr,yield:3+Math.floor(rng()*6),owner:'neutral',
+      building:null,tier:0,storage:0,hops:99};
+  }
+  const home=hexes[axialKey(0,0)];
+  home.terr='home'; home.yield=4; home.owner='player'; home.tier=0;
+  G={hexes,cash:500,workers:5,day:1,tick:0,speed:1,paused:false,
+     inv:{crops:0,timber:0,crude:0,ore:0,water:0,stone:0},
+     price:{}, drift:{}, prevPrice:{}, netWorth:0,
+     wifeAura:0.08, buff:0, buffLeft:0, bankruptDays:0, over:false, msg:'Welcome to the homestead.'};
+  for(const k in RES){G.price[k]=RES[k].base; G.prevPrice[k]=RES[k].base;}
+  recomputeConnectivity();
+  selected=home;
+}
+
+/* connectivity: BFS from HQ over owned hexes -> hops */
+function recomputeConnectivity(){
+  for(const k in G.hexes) if(G.hexes[k].owner==='player') G.hexes[k].hops=99;
+  const home=G.hexes[axialKey(0,0)]; home.hops=1;
+  const queue=[home];
+  while(queue.length){
+    const h=queue.shift();
+    for(const [nq,nr] of neighbors(h.q,h.r)){
+      const n=G.hexes[axialKey(nq,nr)];
+      if(n && n.owner==='player' && n.hops>h.hops+1){ n.hops=h.hops+1; queue.push(n); }
+    }
+  }
+}
+
+function yieldScalar(y){return 0.55+0.11*(y-1);}
+function tierState(h){
+  const t=TIERS[h.tier]; const q=t.base/(1+0.12*Math.max(0,h.hops-2));
+  return {q, cap:t.cap, deliver:t.cap*q,
+    color: q<=0.45?'#c0563f': q<=0.75?'#d8a53a':'#5f8a3f',
+    label: q<=0.45?'WEAK':q<=0.75?'OK':'STRONG'};
+}
+function totalWorkersReq(){let s=0;for(const k in G.hexes){const h=G.hexes[k];if(h.building)s+=TERR[h.terr].workers;}return s;}
+function efficiency(){
+  const req=totalWorkersReq(); const staff=req>0?Math.min(1,G.workers/req):1;
+  const buff=1+G.wifeAura+(G.buffLeft>0?G.buff:0);
+  return Math.min(1.35, staff*buff);
+}
+
+/* ============================ SIM ============================ */
+function simTick(){
+  if(G.over) return;
+  const eff=efficiency();
+  // production + delivery
+  for(const k in G.hexes){
+    const h=G.hexes[k]; if(h.owner!=='player'||!h.building) continue;
+    const td=TERR[h.terr];
+    const produced = td.out*yieldScalar(h.yield)*eff;
+    h.storage=Math.min(200, h.storage+produced);
+    const st=tierState(h);
+    const delivered=Math.min(h.storage, st.deliver);
+    h.storage-=delivered;
+    G.inv[td.res]+=delivered;
+  }
+  G.tick++;
+  if(G.tick% 8===0){ endOfDay(); }
+  if(G.buffLeft>0) G.buffLeft--;
+  computeNetWorth();
+  checkEnd();
+}
+function endOfDay(){
+  G.day++;
+  // wages + maintenance
+  let cost=G.workers*2;
+  for(const k in G.hexes){const h=G.hexes[k];if(h.building)cost+=TERR[h.terr].maint;}
+  G.cash-=cost;
+  // market drift toward base + noise
+  for(const k in RES){
+    G.prevPrice[k]=G.price[k];
+    const base=RES[k].base;
+    let p=G.price[k]+(base-G.price[k])*0.06+(Math.random()-0.5)*base*0.10;
+    G.price[k]=Math.max(base*0.4, Math.min(base*2.6, p));
+  }
+  if(G.cash<0){G.bankruptDays++;} else {G.bankruptDays=0;}
+}
+function computeNetWorth(){
+  let nw=G.cash;
+  for(const k in G.hexes){const h=G.hexes[k];if(h.owner!=='player')continue;
+    nw+=280; if(h.building)nw+=TERR[h.terr].bcost*0.6+h.tier*180;}
+  for(const k in RES) nw+=G.inv[k]*G.price[k];
+  G.netWorth=nw;
+}
+function checkEnd(){
+  if(G.netWorth>=GOAL){ endGame(true); }
+  else if(G.bankruptDays>=4){ endGame(false); }
+}
+function endGame(win){
+  G.over=true; G.paused=true;
+  document.getElementById('endEmoji').textContent=win?'🏆':'💸';
+  document.getElementById('endTitle').textContent=win?'A Tycoon is Born!':'Bankrupt…';
+  document.getElementById('endBody').innerHTML= win
+    ? `You grew a single dirt-road hex into a <b>$${Math.round(G.netWorth).toLocaleString()}</b> empire in <b>${G.day}</b> days. Della's proud of you, sugar. 🌾`
+    : `The books ran dry — four days in the red. Sell goods before prices sag, and upgrade choked roads next time.`;
+  show('endScrim');
+}
+
+/* ============================ ACTIONS ============================ */
+function log(m){G.msg=m;document.getElementById('log').textContent=m;}
+function claimHex(h){
+  const adj=neighbors(h.q,h.r).some(([q,r])=>{const n=G.hexes[axialKey(q,r)];return n&&n.owner==='player';});
+  if(!adj){log("You can only claim land next to your own.");return;}
+  const price=Math.round(80+30*h.yield+(h.terr==='oil'?260:h.terr==='mineral'?180:60));
+  if(G.cash<price){log(`Need $${price} to claim that hex.`);return;}
+  G.cash-=price; h.owner='player'; h.tier=0; recomputeConnectivity();
+  log(`Claimed ${TERR[h.terr].name} for $${price}.`); refresh();
+}
+function buildOn(h){
+  if(h.owner!=='player'){log("Claim the hex first.");return;}
+  if(h.building){log("Already built here.");return;}
+  const td=TERR[h.terr]; if(G.cash<td.bcost){log(`Need $${td.bcost} to build.`);return;}
+  G.cash-=td.bcost; h.building=td.bname;
+  log(`Built ${td.bname}.`); refresh();
+}
+function upgradeRoad(h){
+  if(h.owner!=='player'){return;}
+  if(h.tier>=TIERS.length-1){log("Already top-tier rail.");return;}
+  const cost=TIERS[h.tier].next;
+  if(G.cash<cost){log(`Need $${cost} to upgrade the line.`);return;}
+  G.cash-=cost; h.tier++;
+  log(`Upgraded to ${TIERS[h.tier].name}.`); refresh();
+}
+function sell(res){
+  const qty=G.inv[res]; if(qty<0.5){return;}
+  const gain=qty*G.price[res];
+  G.cash+=gain; G.inv[res]=0;
+  G.price[res]=Math.max(RES[res].base*0.4, G.price[res]*0.96); // self-crash
+  log(`Sold ${Math.floor(qty)} ${RES[res].name} for $${Math.round(gain)}.`); refresh();
+}
+function sellAll(){let tot=0;for(const k in RES){const q=G.inv[k];if(q>=0.5){tot+=q*G.price[k];G.cash+=q*G.price[k];G.inv[k]=0;G.price[k]*=0.97;}}
+  if(tot>0)log(`Sold everything for $${Math.round(tot)}.`);refresh();}
+function hire(){if(G.cash<60){log("Need $60 to hire.");return;}G.cash-=60;G.workers++;log("Hired a farmhand.");refresh();}
+
+/* ============================ RENDER: MAP ============================ */
+function hexCorner(cx,cy,i){const a=Math.PI/180*(60*i-30);return [cx+size*Math.cos(a),cy+size*Math.sin(a)];}
+function hexPath(cx,cy){ctx.beginPath();for(let i=0;i<6;i++){const[x,y]=hexCorner(cx,cy,i);i?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.closePath();}
+function pixel(h){const x=size*Math.sqrt(3)*(h.q+h.r/2);const y=size*1.5*h.r;return {x:x+ORIGIN.x,y:y+ORIGIN.y};}
+
+function layout(){
+  let minx=1e9,miny=1e9,maxx=-1e9,maxy=-1e9;
+  for(const k in G.hexes){const x=size*Math.sqrt(3)*(G.hexes[k].q+G.hexes[k].r/2);const y=size*1.5*G.hexes[k].r;
+    minx=Math.min(minx,x);miny=Math.min(miny,y);maxx=Math.max(maxx,x);maxy=Math.max(maxy,y);}
+  const pad=size+8;
+  const w=(maxx-minx)+pad*2, hgt=(maxy-miny)+pad*2;
+  const dpr=Math.min(2,window.devicePixelRatio||1);
+  canvas.width=w*dpr; canvas.height=hgt*dpr;
+  canvas.style.width=w+'px'; canvas.style.height=hgt+'px';
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ORIGIN.x=pad-minx; ORIGIN.y=pad-miny;
+}
+function draw(){
+  rafPending=false;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  // connection lines first
+  for(const k in G.hexes){const h=G.hexes[k];if(h.owner!=='player'||h.hops>=99||h.q===0&&h.r===0)continue;
+    // parent = neighbor with hops-1
+    let par=null;for(const[nq,nr]of neighbors(h.q,h.r)){const n=G.hexes[axialKey(nq,nr)];if(n&&n.owner==='player'&&n.hops===h.hops-1){par=n;break;}}
+    if(!par)continue;const a=pixel(h),b=pixel(par);const st=tierState(h);
+    ctx.strokeStyle=st.color;ctx.lineWidth=h.tier===2?7:h.tier===1?5:3;ctx.lineCap='round';
+    if(h.tier===0)ctx.setLineDash([2,7]);else ctx.setLineDash([]);
+    ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();ctx.setLineDash([]);
+  }
+  // hexes
+  for(const k in G.hexes){const h=G.hexes[k];const p=pixel(h);const td=TERR[h.terr];
+    hexPath(p.x,p.y);
+    if(h.owner==='player'){ctx.fillStyle=td.color;}
+    else {ctx.fillStyle=shade(td.color,-0.32);}
+    ctx.fill();
+    // borders
+    if(h===selected){ctx.strokeStyle='#241a10';ctx.lineWidth=4;}
+    else if(h.owner==='player'){const st=tierState(h);ctx.strokeStyle=st.color;ctx.lineWidth=3;}
+    else {ctx.strokeStyle='rgba(90,70,40,.45)';ctx.lineWidth=1.5;}
+    hexPath(p.x,p.y);ctx.stroke();
+    // icon
+    ctx.font='19px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(h.building?buildingIcon(h):td.icon,p.x,p.y-3);
+    // HQ marker
+    if(h.q===0&&h.r===0){ctx.font='9px system-ui';ctx.fillStyle='#241a10';ctx.fillText('HQ',p.x,p.y+14);}
+    // storage mini-bar
+    if(h.building){const frac=Math.min(1,h.storage/60);ctx.fillStyle='rgba(0,0,0,.18)';
+      ctx.fillRect(p.x-13,p.y+11,26,4);ctx.fillStyle=frac>0.9?'#c0563f':'#5f8a3f';ctx.fillRect(p.x-13,p.y+11,26*frac,4);}
+  }
+}
+function buildingIcon(h){const t=TERR[h.terr];return t.icon;}
+function requestDraw(){if(!rafPending){rafPending=true;requestAnimationFrame(draw);}}
+function shade(hex,amt){let c=hex.replace('#','');if(c.length===3)c=c.split('').map(x=>x+x).join('');
+  let r=parseInt(c.slice(0,2),16),g=parseInt(c.slice(2,4),16),b=parseInt(c.slice(4,6),16);
+  r=Math.round(Math.max(0,Math.min(255,r+(amt<0?r:255-r)*amt)));
+  g=Math.round(Math.max(0,Math.min(255,g+(amt<0?g:255-g)*amt)));
+  b=Math.round(Math.max(0,Math.min(255,b+(amt<0?b:255-b)*amt)));
+  return `rgb(${r},${g},${b})`;}
+
+/* ============================ RENDER: PANELS ============================ */
+function refresh(){computeNetWorth();updateHUD();renderHexPanel();renderMarket();requestDraw();}
+function money(n){return '$'+Math.round(n).toLocaleString();}
+function updateHUD(){
+  document.getElementById('s-cash').textContent=money(G.cash);
+  document.getElementById('s-cash').className='v'+(G.cash<0?' bad':'');
+  document.getElementById('s-nw').textContent=money(G.netWorth);
+  document.getElementById('s-work').textContent=G.workers;
+  document.getElementById('s-day').textContent=G.day;
+  const bp=Math.round((G.wifeAura+(G.buffLeft>0?G.buff:0))*100);
+  document.getElementById('s-buff').textContent='+'+bp+'%';
+  const pct=Math.max(0,Math.min(100,G.netWorth/GOAL*100));
+  document.getElementById('goalBar').style.width=pct+'%';
+  document.getElementById('objSub').textContent = G.bankruptDays>0? `⚠ In the red (${G.bankruptDays}/4 days)` : 'grow the homestead into an empire';
+}
+function renderHexPanel(){
+  const h=selected;if(!h){return;}
+  const td=TERR[h.terr];
+  document.getElementById('hp-title').textContent=td.name+(h.q===0&&h.r===0?' (HQ)':'');
+  document.getElementById('hp-own').textContent = h.owner==='player'?'yours':'unclaimed';
+  const body=document.getElementById('hp-body');
+  let html='';
+  html+=`<div class="kv"><span>Terrain</span><b>${td.icon} ${td.name}</b></div>`;
+  html+=`<div class="kv"><span>Yield rating</span><b>${'★'.repeat(Math.round(h.yield/2))}${'☆'.repeat(5-Math.round(h.yield/2))} ${h.yield}/10</b></div>`;
+  if(h.owner==='player'){
+    const st=tierState(h);
+    html+=`<div class="kv"><span>Connection</span><b>${TIERS[h.tier].name} <span class="state-pill" style="background:${st.color}">${st.label}</span></b></div>`;
+    html+=`<div class="kv"><span>Throughput</span><b>${st.deliver.toFixed(1)} / ${st.cap} u/tick</b></div>`;
+    html+=`<div class="kv"><span>Distance to HQ</span><b>${h.hops-1} hop${h.hops-1===1?'':'s'}</b></div>`;
+    if(h.building){
+      html+=`<div class="kv"><span>Building</span><b>${td.icon} ${td.bname}</b></div>`;
+      html+=`<div class="kv"><span>Makes</span><b>${RES[td.res].icon} ${td.res} · needs ${td.workers}👷</b></div>`;
+      html+=`<div class="kv"><span>Buffered</span><b>${Math.floor(h.storage)} u</b></div>`;
+    }
+  }
+  html+='<div class="actions">';
+  if(h.owner!=='player'){
+    const price=Math.round(80+30*h.yield+(h.terr==='oil'?260:h.terr==='mineral'?180:60));
+    html+=`<button class="btn primary" onclick="claimHex(selCur())">🚩 Claim land · $${price}</button>`;
+  } else {
+    if(!h.building) html+=`<button class="btn primary" onclick="buildOn(selCur())">🔨 Build ${td.bname} · $${td.bcost}</button>`;
+    if(h.tier<TIERS.length-1) html+=`<button class="btn gold" onclick="upgradeRoad(selCur())">🛣️ Upgrade to ${TIERS[h.tier+1].name} · $${TIERS[h.tier].next}</button>`;
+    if(h.building && tierState(h).deliver < TERR[h.terr].out*yieldScalar(h.yield)) html+=`<p class="hint">⚠ This building makes more than the line can carry — upgrade the road to stop wasting output.</p>`;
+  }
+  html+='</div>';
+  if(h.owner!=='player') html+=`<p class="hint">Claim land next to hexes you already own to expand your network.</p>`;
+  body.innerHTML=html;
+}
+function selCur(){return selected;}
+function renderMarket(){
+  const m=document.getElementById('market');let html='';
+  for(const k in RES){const r=RES[k];const p=G.price[k];const dp=p-G.prevPrice[k];
+    const arrow=dp>0.01?'<span class="arrow up">▲</span>':dp<-0.01?'<span class="arrow dn">▼</span>':'<span style="color:var(--muted)">═</span>';
+    const inv=G.inv[k];
+    html+=`<div class="mrow">
+      <span class="nm">${r.icon} ${r.name} <small style="color:var(--muted);font-weight:500">·${Math.floor(inv)}</small></span>
+      <span class="pr">$${p.toFixed(2)} ${arrow}<small>hold ${Math.floor(inv)}</small></span>
+      <button class="sellbtn" ${inv<0.5?'disabled':''} onclick="sell('${k}')">Sell</button>
+    </div>`;}
+  m.innerHTML=html;
+}
+
+/* ============================ DELLA DIALOGUE ============================ */
+function setPortrait(id,mood){document.getElementById(id).innerHTML=dellaSVG(mood);}
+function openDella(){
+  setPortrait('dellaPortrait','happy');
+  document.getElementById('dspeech').textContent="Well howdy, sugar. What's on your mind?";
+  renderChoices();
+  document.getElementById('dbuff').innerHTML = G.buffLeft>0?`<span class="buffpill">💛 +${Math.round(G.buff*100)}% morale</span>`:'';
+  show('dellaScrim');
+}
+function renderChoices(){
+  const c=document.getElementById('dchoices');
+  c.innerHTML=`
+    <button class="btn" onclick="dellaAdvice()">🧭 Any advice?</button>
+    <button class="btn" onclick="dellaSweet()">💬 How are you, darlin'?</button>
+    <button class="btn gold" onclick="dellaGift()">🎁 Give a gift · $100</button>
+    <button class="btn" onclick="hide('dellaScrim')">Back to work →</button>`;
+}
+function say(mood,text){setPortrait('dellaPortrait',mood);document.getElementById('dspeech').textContent=text;}
+function dellaAdvice(){
+  // contextual tip
+  let red=false,idle=0,shortStaff=totalWorkersReq()>G.workers,rich=false,noBuild=true;
+  for(const k in G.hexes){const h=G.hexes[k];if(h.owner==='player'){if(h.building){noBuild=false;const st=tierState(h);if(st.q<=0.45)red=true;if(h.storage>50)idle++;}}}
+  let inv=0;for(const k in RES)inv+=G.inv[k]*G.price[k];rich=inv>400;
+  let tip;
+  if(noBuild) tip="First things first — build a Crop Farm right here on the Homestead so we've got somethin' to sell.";
+  else if(red) tip="Some of your lines are glowin' red, sugar. A red road chokes the goods — upgrade it to paved or rail.";
+  else if(shortStaff) tip="We're short-handed. Hire a few farmhands or the buildings run at half-steam.";
+  else if(rich) tip="You're sittin' on a pile of goods. Sell 'em before the market sags — and don't dump it all at once.";
+  else if(idle) tip="A couple hexes are backed up. Better roads mean more reaches the barn.";
+  else tip="Lookin' good out there. Claim another hex and keep the network growin'.";
+  say('think',tip);
+}
+function dellaSweet(){
+  const lines=["Happier than a pig in mud, now that you're home. 💛","You keep workin' this hard, I'll have to keep you.",
+    "Sun's out, chickens are fed, and you're here. Can't ask for more.","Don't work yourself ragged, now — the farm'll keep."];
+  say('love',lines[Math.floor(Math.random()*lines.length)]);
+  G.buff=0.12; G.buffLeft=60; refresh();
+  document.getElementById('dbuff').innerHTML=`<span class="buffpill">💛 +12% morale</span>`;
+}
+function dellaGift(){
+  if(G.cash<100){say('surprised',"Aw, save your pennies, sugar — we're a little tight right now.");return;}
+  G.cash-=100; G.buff=0.25; G.buffLeft=140; refresh();
+  say('love',"For me? You old softie. The whole crew's gonna feel this — everybody works a little happier now. 💛");
+  document.getElementById('dbuff').innerHTML=`<span class="buffpill">💛 +25% morale</span>`;
+}
+
+/* ============================ UI PLUMBING ============================ */
+function show(id){document.getElementById(id).classList.add('on');}
+function hide(id){document.getElementById(id).classList.remove('on');}
+
+function pickHex(evt){
+  const rect=canvas.getBoundingClientRect();
+  const mx=(evt.clientX-rect.left), my=(evt.clientY-rect.top);
+  let best=null,bd=1e9;
+  for(const k in G.hexes){const p=pixel(G.hexes[k]);const d=Math.hypot(p.x-mx,p.y-my);if(d<bd){bd=d;best=G.hexes[k];}}
+  if(best&&bd<size*0.95){selected=best;refresh();}
+}
+
+let acc=0,last=0;
+function loop(ts){
+  if(!last)last=ts;const dt=ts-last;last=ts;
+  if(!G.paused&&G.speed>0){acc+=dt*G.speed;const step=1000;
+    while(acc>=step){acc-=step;simTick();}
+    updateHUD();renderMarket();requestDraw();
+  }
+  requestAnimationFrame(loop);
+}
+
+function initTheme(){
+  const btn=document.getElementById('themeBtn');
+  btn.onclick=()=>{const cur=document.documentElement.getAttribute('data-theme');
+    const dark = cur? cur==='dark' : matchMedia('(prefers-color-scheme:dark)').matches;
+    document.documentElement.setAttribute('data-theme', dark?'light':'dark');
+    btn.textContent = dark?'🌙':'☀️';};
+}
+
+function start(){
+  canvas=document.getElementById('map');ctx=canvas.getContext('2d');
+  newGame();layout();refresh();
+  document.getElementById('dellaAv').innerHTML=dellaSVG('happy');
+  setPortrait('introPortrait','happy');
+  canvas.addEventListener('click',pickHex);
+  document.querySelectorAll('.speed button').forEach(b=>b.onclick=()=>{
+    const sp=+b.dataset.sp;G.speed=sp;G.paused=(sp===0);
+    document.querySelectorAll('.speed button').forEach(x=>x.classList.remove('on'));b.classList.add('on');});
+  document.getElementById('hireBtn').onclick=hire;
+  document.getElementById('sellAllBtn').onclick=sellAll;
+  document.getElementById('dellaBtn').onclick=openDella;
+  document.getElementById('startBtn').onclick=()=>hide('introScrim');
+  document.addEventListener('keydown',e=>{if(e.code==='Space'){e.preventDefault();
+    G.paused=!G.paused;G.speed=G.paused?0:1;
+    document.querySelectorAll('.speed button').forEach(x=>x.classList.toggle('on',+x.dataset.sp===G.speed));}});
+  window.addEventListener('resize',()=>{layout();requestDraw();});
+  initTheme();
+  // dev/screenshot helpers (harmless): #nointro skips the splash, #della opens the dialogue
+  if(location.hash.includes('nointro')) hide('introScrim');
+  if(location.hash.includes('della')){hide('introScrim');openDella();}
+  if(location.hash.includes('dark')){document.documentElement.setAttribute('data-theme','dark');document.getElementById('themeBtn').textContent='☀️';}
+  requestAnimationFrame(loop);
+}
+// expose for inline handlers
+window.claimHex=claimHex;window.buildOn=buildOn;window.upgradeRoad=upgradeRoad;window.sell=sell;
+window.selCur=selCur;window.dellaAdvice=dellaAdvice;window.dellaSweet=dellaSweet;window.dellaGift=dellaGift;
+window.hide=hide;
+start();
+</script>
